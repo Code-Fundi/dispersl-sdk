@@ -9,7 +9,7 @@ import { Client, AgenticExecutor, MCPClient, MCPTool } from '../src';
 
 async function main(): Promise<void> {
   // Initialize the Dispersl client
-  const client = new Client({ apiKey: 'your-api-key-here' });
+  const client = new Client({ apiKey: 'pk_live_fqLPlB4TzYAK45yW8Wu7mYpIH4CcaLoz' });
   
   // Create an agentic executor
   const executor = new AgenticExecutor(client.http);

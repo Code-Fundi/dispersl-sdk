@@ -1,3 +1,7 @@
+# Python venv
+./dispersl
+*.md
+
 # Logs
 logs
 *.log

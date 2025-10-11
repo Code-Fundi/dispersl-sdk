@@ -5,7 +5,7 @@ This module defines the exception hierarchy used throughout the SDK
 for consistent error handling and user experience.
 """
 
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any, Optional
 
 
@@ -40,7 +40,7 @@ class DisperslError(Exception):
         self.status_code = status_code
         self.request_id = request_id
         self.response_body = response_body
-        self.timestamp = timestamp or datetime.now(UTC)
+        self.timestamp = timestamp or datetime.now(timezone.utc)
 
     def __str__(self) -> str:
         """Return string representation of the error."""
