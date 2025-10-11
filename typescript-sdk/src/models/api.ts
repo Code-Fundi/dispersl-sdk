@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import { BaseResponseSchema, MetadataSchema, StandardNdjsonResponseSchema } from './base';
+import { BaseResponseSchema, MetadataSchema } from './base';
 
 // Request Models
 

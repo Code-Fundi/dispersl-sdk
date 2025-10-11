@@ -15,6 +15,7 @@ import {
   RepoDocsRequest,
   StandardNdjsonResponse,
 } from '../models';
+import { StandardNdjsonResponseSchema } from '../models/base';
 
 /**
  * Resource for AI agent operations.
@@ -47,8 +48,9 @@ export class AgentsResource extends Resource {
     for (const line of lines) {
       if (line.trim()) {
         try {
-          const chunkData = JSON.parse(line);
-          yield chunkData as StandardNdjsonResponse;
+          const chunkData: unknown = JSON.parse(line);
+          const validated = StandardNdjsonResponseSchema.parse(chunkData);
+          yield validated;
         } catch (error) {
           // Skip invalid JSON lines
           continue;
@@ -80,8 +82,9 @@ export class AgentsResource extends Resource {
     for (const line of lines) {
       if (line.trim()) {
         try {
-          const chunkData = JSON.parse(line);
-          yield chunkData as StandardNdjsonResponse;
+          const chunkData: unknown = JSON.parse(line);
+          const validated = StandardNdjsonResponseSchema.parse(chunkData);
+          yield validated;
         } catch (error) {
           // Skip invalid JSON lines
           continue;
@@ -112,8 +115,9 @@ export class AgentsResource extends Resource {
     for (const line of lines) {
       if (line.trim()) {
         try {
-          const chunkData = JSON.parse(line);
-          yield chunkData as StandardNdjsonResponse;
+          const chunkData: unknown = JSON.parse(line);
+          const validated = StandardNdjsonResponseSchema.parse(chunkData);
+          yield validated;
         } catch (error) {
           // Skip invalid JSON lines
           continue;
@@ -144,8 +148,9 @@ export class AgentsResource extends Resource {
     for (const line of lines) {
       if (line.trim()) {
         try {
-          const chunkData = JSON.parse(line);
-          yield chunkData as StandardNdjsonResponse;
+          const chunkData: unknown = JSON.parse(line);
+          const validated = StandardNdjsonResponseSchema.parse(chunkData);
+          yield validated;
         } catch (error) {
           // Skip invalid JSON lines
           continue;
@@ -176,8 +181,9 @@ export class AgentsResource extends Resource {
     for (const line of lines) {
       if (line.trim()) {
         try {
-          const chunkData = JSON.parse(line);
-          yield chunkData as StandardNdjsonResponse;
+          const chunkData: unknown = JSON.parse(line);
+          const validated = StandardNdjsonResponseSchema.parse(chunkData);
+          yield validated;
         } catch (error) {
           // Skip invalid JSON lines
           continue;
@@ -209,8 +215,9 @@ export class AgentsResource extends Resource {
     for (const line of lines) {
       if (line.trim()) {
         try {
-          const chunkData = JSON.parse(line);
-          yield chunkData as StandardNdjsonResponse;
+          const chunkData: unknown = JSON.parse(line);
+          const validated = StandardNdjsonResponseSchema.parse(chunkData);
+          yield validated;
         } catch (error) {
           // Skip invalid JSON lines
           continue;
