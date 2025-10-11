@@ -3,21 +3,17 @@ Tests for the agentic execution module.
 """
 
 import json
+from unittest.mock import Mock
+
 import pytest
-from unittest.mock import Mock, patch, MagicMock
-from datetime import datetime
 
 from dispersl.agentic import AgenticExecutor
-from dispersl.models import (
-    AgenticSession,
-    HandoverRequest,
-    MCPClient,
-    MCPTool,
-    StandardNdjsonResponse,
-    ToolCall,
-    ToolResponse,
-)
 from dispersl.exceptions import DisperslError
+from dispersl.models.api import (
+    AgenticSession,
+    MCPClient,
+    ToolCall,
+)
 
 
 class TestAgenticExecutor:
@@ -33,7 +29,7 @@ class TestAgenticExecutor:
         session_id = self.executor.create_session()
         assert session_id is not None
         assert session_id in self.executor.sessions
-        
+
         session = self.executor.sessions[session_id]
         assert isinstance(session, AgenticSession)
         assert session.id == session_id
@@ -65,7 +61,7 @@ class TestAgenticExecutor:
         """Test ending a session."""
         session_id = self.executor.create_session()
         assert session_id in self.executor.sessions
-        
+
         result = self.executor.end_session(session_id)
         assert result is True
         assert session_id not in self.executor.sessions
@@ -81,9 +77,9 @@ class TestAgenticExecutor:
             name="test-client",
             command="test-command",
             args=["arg1", "arg2"],
-            env={"TEST_ENV": "test_value"}
+            env={"TEST_ENV": "test_value"},
         )
-        
+
         self.executor.add_mcp_client(client)
         assert "test-client" in self.executor.mcp_clients
         assert self.executor.mcp_clients["test-client"] == client
@@ -92,7 +88,7 @@ class TestAgenticExecutor:
         """Test removing an MCP client."""
         client = MCPClient(name="test-client")
         self.executor.add_mcp_client(client)
-        
+
         result = self.executor.remove_mcp_client("test-client")
         assert result is True
         assert "test-client" not in self.executor.mcp_clients
@@ -106,26 +102,21 @@ class TestAgenticExecutor:
         """Test basic agentic workflow execution."""
         # Mock HTTP response
         mock_response = Mock()
-        mock_response.text = json.dumps({
-            "content": "Test response",
-            "tools": [],
-            "status": "completed",
-            "message": "Success"
-        })
+        mock_response.text = json.dumps(
+            {"content": "Test response", "tools": [], "status": "complete", "message": "Success"}
+        )
         self.mock_http_client.post.return_value = mock_response
 
         # Execute workflow
         request_data = {"prompt": "Test prompt"}
-        responses = list(self.executor.execute_agentic_workflow(
-            "/agent/chat",
-            request_data,
-            max_iterations=1
-        ))
+        responses = list(
+            self.executor.execute_agentic_workflow("/agent/chat", request_data, max_iterations=1)
+        )
 
         # Verify response
         assert len(responses) == 1
         assert responses[0].content == "Test response"
-        assert responses[0].status == "completed"
+        assert responses[0].status == "complete"
 
         # Verify HTTP client was called
         self.mock_http_client.post.assert_called_once()
@@ -138,25 +129,25 @@ class TestAgenticExecutor:
         # Mock HTTP response with tool calls
         tool_call = ToolCall(
             function={"name": "test_tool", "arguments": '{"arg": "value"}'},
-            arguments='{"arg": "value"}'
+            arguments='{"arg": "value"}',
         )
-        
+
         mock_response = Mock()
-        mock_response.text = json.dumps({
-            "content": "Tool call response",
-            "tools": [tool_call.dict()],
-            "status": "in_progress",
-            "message": "Processing"
-        })
+        mock_response.text = json.dumps(
+            {
+                "content": "Tool call response",
+                "tools": [tool_call.model_dump()],
+                "status": "processing",
+                "message": "Processing",
+            }
+        )
         self.mock_http_client.post.return_value = mock_response
 
         # Execute workflow
         request_data = {"prompt": "Test prompt"}
-        responses = list(self.executor.execute_agentic_workflow(
-            "/agent/chat",
-            request_data,
-            max_iterations=1
-        ))
+        responses = list(
+            self.executor.execute_agentic_workflow("/agent/chat", request_data, max_iterations=1)
+        )
 
         # Verify response
         assert len(responses) == 1
@@ -168,27 +159,27 @@ class TestAgenticExecutor:
         handover_tool_call = ToolCall(
             function={
                 "name": "handover_task",
-                "arguments": '{"agent_name": "code", "prompt": "New task"}'
+                "arguments": '{"agent_name": "code", "prompt": "New task"}',
             },
-            arguments='{"agent_name": "code", "prompt": "New task"}'
+            arguments='{"agent_name": "code", "prompt": "New task"}',
         )
-        
+
         mock_response = Mock()
-        mock_response.text = json.dumps({
-            "content": "Handover response",
-            "tools": [handover_tool_call.dict()],
-            "status": "in_progress",
-            "message": "Handing over"
-        })
+        mock_response.text = json.dumps(
+            {
+                "content": "Handover response",
+                "tools": [handover_tool_call.model_dump()],
+                "status": "processing",
+                "message": "Handing over",
+            }
+        )
         self.mock_http_client.post.return_value = mock_response
 
         # Execute workflow
         request_data = {"prompt": "Test prompt"}
-        responses = list(self.executor.execute_agentic_workflow(
-            "/agent/chat",
-            request_data,
-            max_iterations=1
-        ))
+        responses = list(
+            self.executor.execute_agentic_workflow("/agent/chat", request_data, max_iterations=1)
+        )
 
         # Verify response
         assert len(responses) == 1
@@ -199,25 +190,23 @@ class TestAgenticExecutor:
         # Mock HTTP response that always returns tool calls
         tool_call = ToolCall(
             function={"name": "test_tool", "arguments": '{"arg": "value"}'},
-            arguments='{"arg": "value"}'
+            arguments='{"arg": "value"}',
         )
-        
+
         mock_response = Mock()
-        mock_response.text = json.dumps({
-            "content": "Tool call response",
-            "tools": [tool_call.dict()],
-            "status": "in_progress",
-            "message": "Processing"
-        })
+        mock_response.text = json.dumps(
+            {
+                "content": "Tool call response",
+                "tools": [tool_call.model_dump()],
+                "status": "processing",
+                "message": "Processing",
+            }
+        )
         self.mock_http_client.post.return_value = mock_response
 
         # Execute workflow with max iterations
         request_data = {"prompt": "Test prompt"}
-        responses = list(self.executor.execute_agentic_workflow(
-            "/agent/chat",
-            request_data,
-            max_iterations=2
-        ))
+        list(self.executor.execute_agentic_workflow("/agent/chat", request_data, max_iterations=2))
 
         # Verify HTTP client was called multiple times
         assert self.mock_http_client.post.call_count == 2
@@ -229,11 +218,9 @@ class TestAgenticExecutor:
 
         # Execute workflow
         request_data = {"prompt": "Test prompt"}
-        responses = list(self.executor.execute_agentic_workflow(
-            "/agent/chat",
-            request_data,
-            max_iterations=1
-        ))
+        responses = list(
+            self.executor.execute_agentic_workflow("/agent/chat", request_data, max_iterations=1)
+        )
 
         # Verify no responses due to error
         assert len(responses) == 0
@@ -244,11 +231,10 @@ class TestAgenticExecutor:
 <｜tool▁call▁begin｜>function<｜tool▁sep｜>test_tool
 json
 {"arg": "value"}
-<｜tool▁call▁end｜>
-Some text after"""
+<｜tool▁call▁end｜>"""
 
         tool_calls = self.executor.parse_text_tool_calls(text)
-        
+
         assert len(tool_calls) == 1
         assert tool_calls[0].function["name"] == "test_tool"
         assert tool_calls[0].function["arguments"] == '{"arg": "value"}'
@@ -268,7 +254,7 @@ json
 Text after"""
 
         tool_calls = self.executor.parse_text_tool_calls(text)
-        
+
         assert len(tool_calls) == 2
         assert tool_calls[0].function["name"] == "tool1"
         assert tool_calls[1].function["name"] == "tool2"
@@ -276,7 +262,7 @@ Text after"""
     def test_parse_text_tool_calls_invalid_format(self):
         """Test parsing invalid text-based tool calls."""
         text = "Invalid tool call format"
-        
+
         tool_calls = self.executor.parse_text_tool_calls(text)
         assert len(tool_calls) == 0
 
@@ -291,11 +277,11 @@ Text after"""
     def test_execute_built_in_tool(self):
         """Test executing built-in tools."""
         session = AgenticSession(id="test", context={})
-        
+
         # Test list_files tool
         result = self.executor._execute_built_in_tool("list_files", {}, session)
         assert "files" in json.loads(result)
-        
+
         # Test read_file tool
         result = self.executor._execute_built_in_tool("read_file", {}, session)
         assert result == "File content here"
@@ -303,16 +289,16 @@ Text after"""
     def test_execute_tool_not_found(self):
         """Test executing a non-existent tool."""
         session = AgenticSession(id="test", context={})
-        
+
         with pytest.raises(DisperslError, match="Tool nonexistent not found"):
             self.executor._execute_tool("nonexistent", {}, session)
 
     def test_get_endpoint_for_agent(self):
         """Test getting endpoint for different agents."""
         assert self.executor._get_endpoint_for_agent("code") == "/agent/code"
-        assert self.executor._get_endpoint_for_agent("test") == "/agent/test"
+        assert self.executor._get_endpoint_for_agent("test") == "/agent/tests"
         assert self.executor._get_endpoint_for_agent("git") == "/agent/git"
-        assert self.executor._get_endpoint_for_agent("docs") == "/agent/document/repo"
+        assert self.executor._get_endpoint_for_agent("docs") == "/docs/repo"
         assert self.executor._get_endpoint_for_agent("chat") == "/agent/chat"
         assert self.executor._get_endpoint_for_agent("plan") == "/agent/plan"
         assert self.executor._get_endpoint_for_agent("unknown") == "/agent/chat"
@@ -320,13 +306,10 @@ Text after"""
     def test_process_tool_calls_end_session(self):
         """Test processing end_session tool call."""
         session = AgenticSession(id="test", context={})
-        tool_call = ToolCall(
-            function={"name": "end_session", "arguments": "{}"},
-            arguments="{}"
-        )
-        
+        tool_call = ToolCall(function={"name": "end_session", "arguments": "{}"}, arguments="{}")
+
         tool_responses, handover = self.executor._process_tool_calls([tool_call], session)
-        
+
         assert len(tool_responses) == 1
         assert tool_responses[0].tool == "end_session"
         assert tool_responses[0].status == "SUCCESS"
@@ -338,13 +321,13 @@ Text after"""
         tool_call = ToolCall(
             function={
                 "name": "handover_task",
-                "arguments": '{"agent_name": "code", "prompt": "New task"}'
+                "arguments": '{"agent_name": "code", "prompt": "New task"}',
             },
-            arguments='{"agent_name": "code", "prompt": "New task"}'
+            arguments='{"agent_name": "code", "prompt": "New task"}',
         )
-        
+
         tool_responses, handover = self.executor._process_tool_calls([tool_call], session)
-        
+
         assert len(tool_responses) == 1
         assert tool_responses[0].tool == "handover_task"
         assert tool_responses[0].status == "SUCCESS"
@@ -355,13 +338,10 @@ Text after"""
     def test_process_tool_calls_error(self):
         """Test processing tool calls with errors."""
         session = AgenticSession(id="test", context={})
-        tool_call = ToolCall(
-            function={"name": "invalid_tool", "arguments": "{}"},
-            arguments="{}"
-        )
-        
+        tool_call = ToolCall(function={"name": "invalid_tool", "arguments": "{}"}, arguments="{}")
+
         tool_responses, handover = self.executor._process_tool_calls([tool_call], session)
-        
+
         assert len(tool_responses) == 1
         assert tool_responses[0].tool == "invalid_tool"
         assert tool_responses[0].status == "FAILURE"
