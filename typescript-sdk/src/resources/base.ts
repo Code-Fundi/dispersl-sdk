@@ -63,7 +63,8 @@ export abstract class Resource {
       if (error instanceof DisperslError) {
         throw error;
       }
-      throw new DisperslError(`Request failed: ${error}`, { originalError: error as Error });
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new DisperslError(`Request failed: ${errorMessage}`, { originalError: error as Error });
     }
   }
 

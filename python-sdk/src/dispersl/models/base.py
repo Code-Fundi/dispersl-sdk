@@ -6,7 +6,7 @@ used throughout the SDK.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
@@ -43,7 +43,7 @@ class PaginationParams(BaseModel):
 class PaginatedResponse(BaseResponse):
     """Paginated response model."""
 
-    data: List[Any]
+    data: list[Any]
     has_more: Optional[bool] = None
     next_cursor: Optional[str] = None
     total: Optional[int] = None
@@ -64,8 +64,8 @@ class StandardNdjsonResponse(BaseResponse):
     """Standard NDJSON streaming response model."""
 
     content: Optional[str] = None
-    knowledge: Optional[List[str]] = None
-    tools: Optional[List[Any]] = None
+    knowledge: Optional[list[str]] = None
+    tools: Optional[list[Any]] = None
     audio: Optional[str] = None
     error: Optional[ErrorDetail] = None
     metadata: Optional[Metadata] = None
@@ -88,4 +88,3 @@ class NamedModel(BaseModel):
     """Base model with name field."""
 
     name: str
-

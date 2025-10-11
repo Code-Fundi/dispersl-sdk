@@ -7,7 +7,7 @@ HTTP requests and handling responses.
 """
 
 import logging
-from typing import Any, Dict, Optional, Union
+from typing import Any, Optional
 
 from ..exceptions import DisperslError
 from ..http import AsyncHTTPClient, HTTPClient
@@ -19,34 +19,34 @@ logger = logging.getLogger(__name__)
 class Resource:
     """
     Base resource class for API endpoints.
-    
+
     Provides common functionality for making HTTP requests and
     handling responses across all API resources.
     """
-    
+
     def __init__(self, http_client: HTTPClient) -> None:
         """
         Initialize the resource.
-        
+
         Args:
             http_client: HTTP client instance for making requests
         """
         self.http = http_client
         logger.debug(f"Initialized {self.__class__.__name__}")
-    
+
     def _make_request(
         self,
         method: str,
         path: str,
-        params: Optional[Dict[str, Any]] = None,
-        json_data: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        params: Optional[dict[str, Any]] = None,
+        json_data: Optional[dict[str, Any]] = None,
+        headers: Optional[dict[str, str]] = None,
         response_model: Optional[type] = None,
         **kwargs: Any,
     ) -> Any:
         """
         Make an HTTP request and handle the response.
-        
+
         Args:
             method: HTTP method (GET, POST, etc.)
             path: Request path
@@ -55,10 +55,10 @@ class Resource:
             headers: Additional headers
             response_model: Optional Pydantic model for response validation
             **kwargs: Additional request parameters
-        
+
         Returns:
             Response data, optionally validated with response_model
-        
+
         Raises:
             DisperslError: For various API errors
         """
@@ -66,7 +66,7 @@ class Resource:
             # Serialize request data
             if json_data is not None:
                 json_data = serialize_request_data(json_data)
-            
+
             # Make the request
             response = self.http.request(
                 method=method,
@@ -76,26 +76,26 @@ class Resource:
                 headers=headers,
                 **kwargs,
             )
-            
+
             # Deserialize response
             response_data = deserialize_response_data(
                 response.content,
                 model_class=response_model,
             )
-            
+
             return response_data
-        
+
         except Exception as e:
             if isinstance(e, DisperslError):
                 raise
             logger.error(f"Request failed: {e}")
-            raise DisperslError(f"Request failed: {e}", original_error=e)
-    
+            raise DisperslError(f"Request failed: {e}", original_error=e) from e
+
     def get(
         self,
         path: str,
-        params: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        params: Optional[dict[str, Any]] = None,
+        headers: Optional[dict[str, str]] = None,
         response_model: Optional[type] = None,
         **kwargs: Any,
     ) -> Any:
@@ -103,13 +103,13 @@ class Resource:
         return self._make_request(
             "GET", path, params=params, headers=headers, response_model=response_model, **kwargs
         )
-    
+
     def post(
         self,
         path: str,
-        json_data: Optional[Dict[str, Any]] = None,
-        params: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        json_data: Optional[dict[str, Any]] = None,
+        params: Optional[dict[str, Any]] = None,
+        headers: Optional[dict[str, str]] = None,
         response_model: Optional[type] = None,
         **kwargs: Any,
     ) -> Any:
@@ -123,13 +123,13 @@ class Resource:
             response_model=response_model,
             **kwargs,
         )
-    
+
     def put(
         self,
         path: str,
-        json_data: Optional[Dict[str, Any]] = None,
-        params: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        json_data: Optional[dict[str, Any]] = None,
+        params: Optional[dict[str, Any]] = None,
+        headers: Optional[dict[str, str]] = None,
         response_model: Optional[type] = None,
         **kwargs: Any,
     ) -> Any:
@@ -143,12 +143,12 @@ class Resource:
             response_model=response_model,
             **kwargs,
         )
-    
+
     def delete(
         self,
         path: str,
-        params: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        params: Optional[dict[str, Any]] = None,
+        headers: Optional[dict[str, str]] = None,
         response_model: Optional[type] = None,
         **kwargs: Any,
     ) -> Any:
@@ -161,34 +161,34 @@ class Resource:
 class AsyncResource:
     """
     Base async resource class for API endpoints.
-    
+
     Provides common functionality for making async HTTP requests and
     handling responses across all API resources.
     """
-    
+
     def __init__(self, http_client: AsyncHTTPClient) -> None:
         """
         Initialize the async resource.
-        
+
         Args:
             http_client: Async HTTP client instance for making requests
         """
         self.http = http_client
         logger.debug(f"Initialized {self.__class__.__name__}")
-    
+
     async def _make_request(
         self,
         method: str,
         path: str,
-        params: Optional[Dict[str, Any]] = None,
-        json_data: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        params: Optional[dict[str, Any]] = None,
+        json_data: Optional[dict[str, Any]] = None,
+        headers: Optional[dict[str, str]] = None,
         response_model: Optional[type] = None,
         **kwargs: Any,
     ) -> Any:
         """
         Make an async HTTP request and handle the response.
-        
+
         Args:
             method: HTTP method (GET, POST, etc.)
             path: Request path
@@ -197,10 +197,10 @@ class AsyncResource:
             headers: Additional headers
             response_model: Optional Pydantic model for response validation
             **kwargs: Additional request parameters
-        
+
         Returns:
             Response data, optionally validated with response_model
-        
+
         Raises:
             DisperslError: For various API errors
         """
@@ -208,7 +208,7 @@ class AsyncResource:
             # Serialize request data
             if json_data is not None:
                 json_data = serialize_request_data(json_data)
-            
+
             # Make the request
             response = await self.http.request(
                 method=method,
@@ -218,26 +218,26 @@ class AsyncResource:
                 headers=headers,
                 **kwargs,
             )
-            
+
             # Deserialize response
             response_data = deserialize_response_data(
                 response.content,
                 model_class=response_model,
             )
-            
+
             return response_data
-        
+
         except Exception as e:
             if isinstance(e, DisperslError):
                 raise
             logger.error(f"Async request failed: {e}")
-            raise DisperslError(f"Async request failed: {e}", original_error=e)
-    
+            raise DisperslError(f"Async request failed: {e}", original_error=e) from e
+
     async def get(
         self,
         path: str,
-        params: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        params: Optional[dict[str, Any]] = None,
+        headers: Optional[dict[str, str]] = None,
         response_model: Optional[type] = None,
         **kwargs: Any,
     ) -> Any:
@@ -245,13 +245,13 @@ class AsyncResource:
         return await self._make_request(
             "GET", path, params=params, headers=headers, response_model=response_model, **kwargs
         )
-    
+
     async def post(
         self,
         path: str,
-        json_data: Optional[Dict[str, Any]] = None,
-        params: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        json_data: Optional[dict[str, Any]] = None,
+        params: Optional[dict[str, Any]] = None,
+        headers: Optional[dict[str, str]] = None,
         response_model: Optional[type] = None,
         **kwargs: Any,
     ) -> Any:
@@ -265,13 +265,13 @@ class AsyncResource:
             response_model=response_model,
             **kwargs,
         )
-    
+
     async def put(
         self,
         path: str,
-        json_data: Optional[Dict[str, Any]] = None,
-        params: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        json_data: Optional[dict[str, Any]] = None,
+        params: Optional[dict[str, Any]] = None,
+        headers: Optional[dict[str, str]] = None,
         response_model: Optional[type] = None,
         **kwargs: Any,
     ) -> Any:
@@ -285,12 +285,12 @@ class AsyncResource:
             response_model=response_model,
             **kwargs,
         )
-    
+
     async def delete(
         self,
         path: str,
-        params: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        params: Optional[dict[str, Any]] = None,
+        headers: Optional[dict[str, str]] = None,
         response_model: Optional[type] = None,
         **kwargs: Any,
     ) -> Any:

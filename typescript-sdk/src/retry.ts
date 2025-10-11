@@ -14,6 +14,8 @@ import {
   TimeoutError,
 } from './exceptions';
 
+export { CircuitBreakerOpenError };
+
 export interface RetryOptions {
   maxRetries?: number;
   backoffFactor?: number;
@@ -132,8 +134,8 @@ function calculateBackoff(
   maxBackoff: number,
   jitter: boolean
 ): number {
-  // Calculate exponential backoff
-  let delay = Math.pow(backoffFactor, attempt) * 1000; // Convert to milliseconds
+  // Calculate exponential backoff starting at backoffFactor^1
+  let delay = Math.pow(backoffFactor, attempt + 1) * 1000; // Convert to milliseconds
 
   // Apply maximum backoff limit
   delay = Math.min(delay, maxBackoff * 1000);
@@ -168,12 +170,21 @@ export class CircuitBreaker {
   private failureCount = 0;
   private lastFailureTime?: number;
   private state: 'closed' | 'open' | 'half-open' = 'closed';
+  private readonly failureThreshold: number;
+  private readonly recoveryTimeout: number;
+  private readonly expectedException: new (...args: any[]) => Error;
 
-  constructor(
-    private readonly failureThreshold: number = 5,
-    private readonly recoveryTimeout: number = 60000, // 60 seconds
-    private readonly expectedException: new (...args: any[]) => Error = Error
-  ) {}
+  constructor(options: CircuitBreakerOptions | number = {}) {
+    if (typeof options === 'number') {
+      this.failureThreshold = options;
+      this.recoveryTimeout = 60000;
+      this.expectedException = Error;
+    } else {
+      this.failureThreshold = options.failureThreshold ?? 5;
+      this.recoveryTimeout = options.recoveryTimeout ?? 60000;
+      this.expectedException = options.expectedException ?? Error;
+    }
+  }
 
   /**
    * Execute a function with circuit breaker protection.

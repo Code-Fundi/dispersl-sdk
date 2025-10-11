@@ -4,8 +4,9 @@ Supports dynamic API URLs via environment variables
 """
 
 import os
+from collections.abc import Generator
+
 import pytest
-from typing import Generator
 
 # Set default API URL for testing
 DEFAULT_API_URL = "http://localhost:3000"
@@ -17,7 +18,7 @@ def pytest_configure(config: pytest.Config) -> None:
     # Set default environment variables if not set
     os.environ.setdefault("DISPERSL_API_URL", DEFAULT_API_URL)
     os.environ.setdefault("DISPERSL_API_KEY", DEFAULT_API_KEY)
-    
+
     # Log the API URL being used
     print(f"\nRunning tests against: {os.environ['DISPERSL_API_URL']}")
 
@@ -48,13 +49,13 @@ def setup_test_env() -> Generator[None, None, None]:
         "DISPERSL_API_URL": os.environ.get("DISPERSL_API_URL"),
         "DISPERSL_API_KEY": os.environ.get("DISPERSL_API_KEY"),
     }
-    
+
     # Ensure defaults are set
     os.environ.setdefault("DISPERSL_API_URL", DEFAULT_API_URL)
     os.environ.setdefault("DISPERSL_API_KEY", DEFAULT_API_KEY)
-    
+
     yield
-    
+
     # Teardown: Restore original environment
     for key, value in original_env.items():
         if value is None:
@@ -80,4 +81,3 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list) -> None:
             # Skip e2e tests unless explicitly enabled
             if not os.environ.get("RUN_E2E_TESTS", "false").lower() == "true":
                 item.add_marker(pytest.mark.skip(reason="E2E tests disabled"))
-

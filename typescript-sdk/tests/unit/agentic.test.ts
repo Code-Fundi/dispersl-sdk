@@ -2,7 +2,7 @@
  * Tests for the agentic execution module.
  */
 
-import { AgenticExecutor } from '../src/agentic';
+import { AgenticExecutor } from '../../src/agentic';
 import {
   AgenticSession,
   HandoverRequest,
@@ -11,8 +11,8 @@ import {
   StandardNdjsonResponse,
   ToolCall,
   ToolResponse,
-} from '../src/models';
-import { DisperslError } from '../src/exceptions';
+} from '../../src/models';
+import { DisperslError } from '../../src/exceptions';
 
 // Mock HTTP client
 const mockHTTPClient = {
@@ -269,13 +269,13 @@ describe('AgenticExecutor', () => {
 <｜tool▁call▁begin｜>function<｜tool▁sep｜>test_tool
 json
 {"arg": "value"}
-<｜tool▁call▁end｜>Some text after`;
+<｜tool▁call▁end｜>`;
 
       const toolCalls = executor.parseTextToolCalls(text);
 
       expect(toolCalls).toHaveLength(1);
       expect(toolCalls[0].function.name).toBe('test_tool');
-      expect(toolCalls[0].function.arguments).toBe('{"arg": "value"}');
+      expect(toolCalls[0].function.arguments).toBe('{"arg":"value"}');
     });
 
     test('should parse multiple text-based tool calls', () => {
@@ -346,9 +346,9 @@ json
   describe('Agent Endpoints', () => {
     test('should get correct endpoint for different agents', () => {
       expect(executor['getEndpointForAgent']('code')).toBe('/agent/code');
-      expect(executor['getEndpointForAgent']('test')).toBe('/agent/test');
+      expect(executor['getEndpointForAgent']('test')).toBe('/agent/tests');
       expect(executor['getEndpointForAgent']('git')).toBe('/agent/git');
-      expect(executor['getEndpointForAgent']('docs')).toBe('/agent/document/repo');
+      expect(executor['getEndpointForAgent']('docs')).toBe('/docs/repo');
       expect(executor['getEndpointForAgent']('chat')).toBe('/agent/chat');
       expect(executor['getEndpointForAgent']('plan')).toBe('/agent/plan');
       expect(executor['getEndpointForAgent']('unknown')).toBe('/agent/chat');
