@@ -1,0 +1,4 @@
+cd typescript-sdk
+npm run lint
+npm run type-check
+
