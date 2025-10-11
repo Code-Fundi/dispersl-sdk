@@ -1,0 +1,25 @@
+# Python SDK Configuration Files
+
+## Pylint Configuration
+[MESSAGES CONTROL]
+disable=
+    missing-module-docstring,
+    missing-class-docstring,
+    missing-function-docstring,
+
+[FORMAT]
+max-line-length=100
+
+[DESIGN]
+max-args=7
+max-locals=20
+max-branches=15
+max-statements=50
+
+[VARIABLES]
+dummy-variables-rgx=_+$|(_[a-zA-Z0-9_]*[a-zA-Z0-9]+?$)|dummy|^ignored_|^unused_
+
+[IMPORTS]
+import-graph=dispersl.*
+import-graph=dispersl.*
+import-graph=dispersl.*
