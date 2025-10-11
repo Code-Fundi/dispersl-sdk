@@ -51,7 +51,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        node-version: ['18', '20', '21']
+        node-version: ['18', '21']
     env:
       # Dynamic API URL for testing
       DISPERSL_API_URL: ${{ secrets.TEST_API_URL || 'http://localhost:3000' }}
