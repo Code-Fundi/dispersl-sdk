@@ -1,0 +1,106 @@
+/**
+ * Data models for the Dispersl SDK.
+ * 
+ * This module exports all the data models used throughout the SDK.
+ */
+
+// Base models
+export type {
+  BaseResponse,
+  ErrorResponse,
+  PaginationParams,
+  PaginatedResponse,
+  Metadata,
+  StandardNdjsonResponse,
+  TimestampedModel,
+  IdentifiableModel,
+  NamedModel,
+} from './base';
+
+// API models
+export type {
+  AgenticSession,
+  HandoverRequest,
+  MCPClient,
+  MCPTool,
+  ToolResponse,
+  ChatRequest,
+  DisperseRequest,
+  BuildRequest,
+  RepoDocsRequest,
+  NewAPIKeyRequest,
+  TaskEditRequest,
+  HistoryRequest,
+  ModelInfo,
+  ModelsResponse,
+  APIKeyInfo,
+  APIKeysResponse,
+  NewAPIKeyResponse,
+  TaskInfo,
+  TaskResponse,
+  StepInfo,
+  StepResponse,
+  HistoryEntry,
+  HistoryResponse,
+  StatsResponse,
+  ToolParameter,
+  ToolDefinition,
+  ToolCall,
+  NdjsonTextExample,
+  NdjsonReasoningExample,
+  NdjsonToolExample,
+  NdjsonKnowledgeExample,
+  NdjsonAudioExample,
+  NdjsonCompleteExample,
+  NdjsonErrorExample,
+} from './api';
+
+// Re-export schemas for validation
+export {
+  BaseResponseSchema,
+  ErrorResponseSchema,
+  PaginationParamsSchema,
+  PaginatedResponseSchema,
+  MetadataSchema,
+  StandardNdjsonResponseSchema,
+  TimestampedModelSchema,
+  IdentifiableModelSchema,
+  NamedModelSchema,
+} from './base';
+
+export {
+  AgenticSessionSchema,
+  HandoverRequestSchema,
+  MCPClientSchema,
+  MCPToolSchema,
+  ToolResponseSchema,
+  ChatRequestSchema,
+  DisperseRequestSchema,
+  BuildRequestSchema,
+  RepoDocsRequestSchema,
+  NewAPIKeyRequestSchema,
+  TaskEditRequestSchema,
+  HistoryRequestSchema,
+  ModelInfoSchema,
+  ModelsResponseSchema,
+  APIKeyInfoSchema,
+  APIKeysResponseSchema,
+  NewAPIKeyResponseSchema,
+  TaskInfoSchema,
+  TaskResponseSchema,
+  StepInfoSchema,
+  StepResponseSchema,
+  HistoryEntrySchema,
+  HistoryResponseSchema,
+  StatsResponseSchema,
+  ToolParameterSchema,
+  ToolDefinitionSchema,
+  ToolCallSchema,
+  NdjsonTextExampleSchema,
+  NdjsonReasoningExampleSchema,
+  NdjsonToolExampleSchema,
+  NdjsonKnowledgeExampleSchema,
+  NdjsonAudioExampleSchema,
+  NdjsonCompleteExampleSchema,
+  NdjsonErrorExampleSchema,
+} from './api';

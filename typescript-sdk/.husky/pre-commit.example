@@ -1,0 +1,4 @@
+cd typescript-sdk
+pnpm run lint
+pnpm run type-check
+
