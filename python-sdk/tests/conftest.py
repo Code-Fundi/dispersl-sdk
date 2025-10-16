@@ -9,7 +9,7 @@ from collections.abc import Generator
 import pytest
 
 # Set default API URL for testing
-DEFAULT_API_URL = "http://localhost:3000"
+DEFAULT_API_URL = "http://localhost:3001/v1"
 DEFAULT_API_KEY = "test_api_key"
 
 

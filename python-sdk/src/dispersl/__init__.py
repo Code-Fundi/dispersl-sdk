@@ -28,6 +28,9 @@ from .models.api import (
     ToolResponse,
 )
 
+# Backward compatibility alias
+Dispersl = Client
+
 __version__ = "0.1.0"
 __all__ = [
     "AgenticExecutor",
@@ -35,6 +38,7 @@ __all__ = [
     "AsyncClient",
     "AuthenticationError",
     "Client",
+    "Dispersl",
     "DisperslError",
     "HandoverRequest",
     "MCPClient",

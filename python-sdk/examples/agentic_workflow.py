@@ -12,7 +12,7 @@ from dispersl import Client, AgenticExecutor, MCPClient, MCPTool
 async def main():
     """Main example function."""
     # Initialize the Dispersl client
-    client = Client(api_key="your-api-key-here")
+    client = Client(api_key="pk_live_fqLPlB4TzYAK45yW8Wu7mYpIH4CcaLoz", base_url="http://localhost:3001/v1")
     
     # Create an agentic executor
     executor = AgenticExecutor(client.http)

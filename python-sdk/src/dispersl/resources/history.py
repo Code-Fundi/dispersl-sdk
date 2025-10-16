@@ -8,7 +8,7 @@ the Dispersl API's history endpoints.
 import logging
 from typing import Optional
 
-from ..models.api import HistoryRequest, HistoryResponse
+from ..models.api import HistoryRequest, HistoryResponse, PaginatedHistoryResponse
 from .base import AsyncResource, Resource
 
 logger = logging.getLogger(__name__)
@@ -24,8 +24,9 @@ class HistoryResource(Resource):
     def get_task_history(
         self,
         task_id: str,
-        limit: Optional[int] = None,
-    ) -> HistoryResponse:
+        page: Optional[int] = None,
+        pageSize: Optional[int] = None,
+    ) -> PaginatedHistoryResponse:
         """
         Get task history by ID.
 
@@ -33,27 +34,29 @@ class HistoryResource(Resource):
 
         Args:
             task_id: Task ID to retrieve history for
-            limit: Number of items to return
+            page: Page number (1-based)
+            pageSize: Items per page
 
         Returns:
-            HistoryResponse: Task history
+            PaginatedHistoryResponse: Task history with pagination info
 
         Raises:
             DisperslError: For various API errors
         """
-        request_data = HistoryRequest(limit=limit)
+        request_data = HistoryRequest(page=page, pageSize=pageSize)
 
         return self.get(
-            f"/history/task{task_id}",
+            f"/history/task/{task_id}",
             json_data=request_data.dict(exclude_none=True),
-            response_model=HistoryResponse,
+            response_model=PaginatedHistoryResponse,
         )
 
     def get_step_history(
         self,
         step_id: str,
-        limit: Optional[int] = None,
-    ) -> HistoryResponse:
+        page: Optional[int] = None,
+        pageSize: Optional[int] = None,
+    ) -> PaginatedHistoryResponse:
         """
         Get step history by ID.
 
@@ -61,20 +64,21 @@ class HistoryResource(Resource):
 
         Args:
             step_id: Step ID to retrieve history for
-            limit: Number of items to return
+            page: Page number (1-based)
+            pageSize: Items per page
 
         Returns:
-            HistoryResponse: Step history
+            PaginatedHistoryResponse: Step history with pagination info
 
         Raises:
             DisperslError: For various API errors
         """
-        request_data = HistoryRequest(limit=limit)
+        request_data = HistoryRequest(page=page, pageSize=pageSize)
 
         return self.get(
             f"/history/step/{step_id}",
             json_data=request_data.dict(exclude_none=True),
-            response_model=HistoryResponse,
+            response_model=PaginatedHistoryResponse,
         )
 
 
@@ -88,8 +92,9 @@ class AsyncHistoryResource(AsyncResource):
     async def get_task_history(
         self,
         task_id: str,
-        limit: Optional[int] = None,
-    ) -> HistoryResponse:
+        page: Optional[int] = None,
+        pageSize: Optional[int] = None,
+    ) -> PaginatedHistoryResponse:
         """
         Async get task history by ID.
 
@@ -97,27 +102,29 @@ class AsyncHistoryResource(AsyncResource):
 
         Args:
             task_id: Task ID to retrieve history for
-            limit: Number of items to return
+            page: Page number (1-based)
+            pageSize: Items per page
 
         Returns:
-            HistoryResponse: Task history
+            PaginatedHistoryResponse: Task history with pagination info
 
         Raises:
             DisperslError: For various API errors
         """
-        request_data = HistoryRequest(limit=limit)
+        request_data = HistoryRequest(page=page, pageSize=pageSize)
 
         return await self.get(
-            f"/history/task{task_id}",
+            f"/history/task/{task_id}",
             json_data=request_data.dict(exclude_none=True),
-            response_model=HistoryResponse,
+            response_model=PaginatedHistoryResponse,
         )
 
     async def get_step_history(
         self,
         step_id: str,
-        limit: Optional[int] = None,
-    ) -> HistoryResponse:
+        page: Optional[int] = None,
+        pageSize: Optional[int] = None,
+    ) -> PaginatedHistoryResponse:
         """
         Async get step history by ID.
 
@@ -125,18 +132,19 @@ class AsyncHistoryResource(AsyncResource):
 
         Args:
             step_id: Step ID to retrieve history for
-            limit: Number of items to return
+            page: Page number (1-based)
+            pageSize: Items per page
 
         Returns:
-            HistoryResponse: Step history
+            PaginatedHistoryResponse: Step history with pagination info
 
         Raises:
             DisperslError: For various API errors
         """
-        request_data = HistoryRequest(limit=limit)
+        request_data = HistoryRequest(page=page, pageSize=pageSize)
 
         return await self.get(
             f"/history/step/{step_id}",
             json_data=request_data.dict(exclude_none=True),
-            response_model=HistoryResponse,
+            response_model=PaginatedHistoryResponse,
         )

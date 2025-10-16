@@ -5,6 +5,8 @@
  * API key, Bearer token, and OAuth 2.0 support.
  */
 
+import { AuthenticationError } from './exceptions';
+
 export interface AuthHandler {
   getHeaders(): Record<string, string>;
 }
@@ -154,7 +156,7 @@ export function getAuthFromEnv(): AuthHandler | null {
  *   - string: Treat as API key
  *   - AuthHandler: Use directly
  * @returns AuthHandler instance or null
- * @throws Error - If auth type is invalid
+ * @throws AuthenticationError - If auth is empty string or invalid
  */
 export function createAuthHandler(auth?: string | AuthHandler | null): AuthHandler | null {
   if (auth === null || auth === undefined) {
@@ -162,6 +164,12 @@ export function createAuthHandler(auth?: string | AuthHandler | null): AuthHandl
   }
 
   if (typeof auth === 'string') {
+    // Reject empty strings
+    if (auth.trim() === '') {
+      throw new AuthenticationError(
+        'API key cannot be empty. Provide a valid API key or set DISPERSL_API_KEY environment variable.'
+      );
+    }
     return new APIKeyAuth(auth);
   }
 
@@ -169,7 +177,7 @@ export function createAuthHandler(auth?: string | AuthHandler | null): AuthHandl
     return auth;
   }
 
-  throw new Error(
+  throw new AuthenticationError(
     `Invalid auth type: ${typeof auth}. ` +
     'Expected null, string, or AuthHandler instance.'
   );

@@ -54,18 +54,54 @@ export interface RequestOptions {
 export class HTTPClient {
   private readonly axiosInstance: AxiosInstance;
   private readonly baseURL: string;
+  private readonly defaultHeaders: Record<string, string>;
 
-  constructor(options: HTTPClientOptions) {
+  // Overloaded constructor signatures for backward compatibility
+  constructor(options: HTTPClientOptions);
+  constructor(baseURL: string, apiKey: string, options?: Partial<HTTPClientOptions>);
+  
+  constructor(
+    optionsOrBaseURL: HTTPClientOptions | string,
+    apiKey?: string,
+    additionalOptions?: Partial<HTTPClientOptions>
+  ) {
+    let options: HTTPClientOptions;
+    
+    // Handle both constructor signatures
+    if (typeof optionsOrBaseURL === 'string') {
+      // Legacy signature: new HTTPClient(baseURL, apiKey, options?)
+      if (!apiKey || apiKey.trim() === '') {
+        throw new AuthenticationError('API key is required');
+      }
+      
+      options = {
+        baseURL: optionsOrBaseURL,
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          ...(additionalOptions?.headers || {})
+        },
+        timeout: additionalOptions?.timeout || 30000,
+        connectTimeout: additionalOptions?.connectTimeout || 10000,
+        maxRetries: additionalOptions?.maxRetries || 3,
+        backoffFactor: additionalOptions?.backoffFactor || 2.0,
+      };
+    } else {
+      // New signature: new HTTPClient(options)
+      options = optionsOrBaseURL;
+    }
+    
     this.baseURL = options.baseURL.replace(/\/$/, '');
+    
+    this.defaultHeaders = {
+      'Content-Type': 'application/json',
+      'User-Agent': 'dispersl-typescript/0.1.0',
+      ...(options.headers || {}),
+    };
 
     this.axiosInstance = axios.create({
       baseURL: this.baseURL,
       timeout: options.timeout || 30000,
-      headers: {
-        'Content-Type': 'application/json',
-        'User-Agent': 'dispersl-sdk-typescript/0.1.0',
-        ...options.headers,
-      },
+      headers: this.defaultHeaders,
     });
 
     // Add request interceptor for logging
@@ -179,6 +215,30 @@ export class HTTPClient {
   }
 
   /**
+   * Make a PATCH request.
+   * 
+   * @param path - Request path
+   * @param data - Request body
+   * @param params - Query parameters
+   * @param headers - Additional headers
+   * @returns HTTP response
+   */
+  async patch<T = unknown>(
+    path: string,
+    data?: unknown,
+    params?: Record<string, unknown>,
+    headers?: Record<string, string>
+  ): Promise<AxiosResponse<T>> {
+    return this.request<T>({
+      method: 'PATCH',
+      path,
+      data,
+      params,
+      headers,
+    });
+  }
+
+  /**
    * Make a DELETE request.
    * 
    * @param path - Request path
@@ -200,12 +260,96 @@ export class HTTPClient {
   }
 
   /**
+   * Make a POST request with streaming response.
+   * 
+   * @param path - Request path
+   * @param data - Request body
+   * @param params - Query parameters
+   * @param headers - Additional headers
+   * @returns Async iterable of response chunks
+   */
+  async *postStream<T = unknown>(
+    path: string,
+    data?: unknown,
+    params?: Record<string, unknown>,
+    headers?: Record<string, string>
+  ): AsyncIterable<T> {
+    const response = await this.axiosInstance.request({
+      method: 'POST',
+      url: path,
+      data,
+      params,
+      headers,
+      responseType: 'stream',
+    });
+
+    // Create NDJSON parser for streaming
+    const parser = new (await import('./serializers')).NDJSONParser();
+    
+    for await (const chunk of response.data) {
+      const text = chunk.toString();
+      const objects = parser.parse(text, { skipInvalid: true });
+      for (const obj of objects) {
+        yield obj as T;
+      }
+    }
+    
+    // Flush any remaining data
+    const final = parser.flush({ throwOnInvalid: false });
+    if (final) {
+      yield final as T;
+    }
+  }
+
+  /**
    * Get the base URL for API requests.
    * 
    * @returns Base URL string
    */
   getBaseURL(): string {
     return this.baseURL;
+  }
+
+  /**
+   * Get the baseUrl property (alias for getBaseURL).
+   */
+  get baseUrl(): string {
+    return this.baseURL;
+  }
+
+  /**
+   * Get default headers with optional custom headers.
+   * 
+   * @param customHeaders - Optional custom headers to merge
+   * @returns Merged headers
+   */
+  getHeaders(customHeaders?: Record<string, string>): Record<string, string> {
+    return {
+      ...this.defaultHeaders,
+      ...(customHeaders || {}),
+    };
+  }
+
+  /**
+   * Build a URL with optional query parameters.
+   * 
+   * @param path - The path to append to base URL
+   * @param params - Optional query parameters
+   * @returns The built URL
+   */
+  buildUrl(path: string, params?: Record<string, any>): string {
+    // Normalize path
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+    let url = `${this.baseURL}${normalizedPath}`;
+    
+    if (params && Object.keys(params).length > 0) {
+      const queryString = Object.entries(params)
+        .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+        .join('&');
+      url += `?${queryString}`;
+    }
+    
+    return url;
   }
 
   /**

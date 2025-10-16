@@ -6,8 +6,10 @@ the Dispersl API's step management endpoints.
 """
 
 import logging
+from typing import Optional
 
-from ..models.api import StepResponse
+from ..models.api import StepResponse, PaginatedStepResponse
+from ..models.base import PaginationParams
 from .base import AsyncResource, Resource
 
 logger = logging.getLogger(__name__)
@@ -20,24 +22,26 @@ class StepManagementResource(Resource):
     Provides methods for retrieving and deleting task steps.
     """
 
-    def get_by_task_id(self, task_id: str) -> StepResponse:
+    def get_by_task_id(self, task_id: str, params: Optional[PaginationParams] = None) -> PaginatedStepResponse:
         """
-        Get a step by Task ID.
+        Get steps by Task ID.
 
-        Retrieves a specific step by its Task ID.
+        Retrieves steps for a specific task by its ID.
 
         Args:
             task_id: Task ID to retrieve steps for
+            params: Pagination parameters
 
         Returns:
-            StepResponse: Step information
+            PaginatedStepResponse: Step information with pagination info
 
         Raises:
             DisperslError: For various API errors
         """
         return self.get(
             f"/steps/task/{task_id}",
-            response_model=StepResponse,
+            params=params.dict(exclude_none=True) if params else None,
+            response_model=PaginatedStepResponse,
         )
 
     def get(self, step_id: str) -> StepResponse:
@@ -88,24 +92,26 @@ class AsyncStepManagementResource(AsyncResource):
     Provides async methods for retrieving and deleting task steps.
     """
 
-    async def get_by_task_id(self, task_id: str) -> StepResponse:
+    async def get_by_task_id(self, task_id: str, params: Optional[PaginationParams] = None) -> PaginatedStepResponse:
         """
-        Async get a step by Task ID.
+        Async get steps by Task ID.
 
-        Retrieves a specific step by its Task ID.
+        Retrieves steps for a specific task by its ID.
 
         Args:
             task_id: Task ID to retrieve steps for
+            params: Pagination parameters
 
         Returns:
-            StepResponse: Step information
+            PaginatedStepResponse: Step information with pagination info
 
         Raises:
             DisperslError: For various API errors
         """
         return await self.get(
             f"/steps/task/{task_id}",
-            response_model=StepResponse,
+            params=params.dict(exclude_none=True) if params else None,
+            response_model=PaginatedStepResponse,
         )
 
     async def get(self, step_id: str) -> StepResponse:

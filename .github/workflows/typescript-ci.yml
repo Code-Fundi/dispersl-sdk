@@ -54,7 +54,7 @@ jobs:
         node-version: ['18', '21']
     env:
       # Dynamic API URL for testing
-      DISPERSL_API_URL: ${{ secrets.TEST_API_URL || 'http://localhost:3000' }}
+      DISPERSL_API_URL: ${{ secrets.TEST_API_URL || 'http://localhost:3001/v1' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -78,7 +78,7 @@ jobs:
           DISPERSL_API_URL: ${{ env.DISPERSL_API_URL }}
       
       - name: Run integration tests (if API available)
-        if: env.DISPERSL_API_URL != 'http://localhost:3000' || github.event_name == 'push'
+        if: env.DISPERSL_API_URL != 'http://localhost:3001/v1' || github.event_name == 'push'
         run: cd typescript-sdk && pnpm run test:integration || echo "Integration tests skipped"
         env:
           DISPERSL_API_URL: ${{ env.DISPERSL_API_URL }}

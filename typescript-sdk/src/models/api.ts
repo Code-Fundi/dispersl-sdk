@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import { BaseResponseSchema, MetadataSchema } from './base';
+import { BaseResponseSchema, MetadataSchema, PaginationSchema } from './base';
 
 // Request Models
 
@@ -80,7 +80,8 @@ export const TaskEditRequestSchema = z.object({
 export type TaskEditRequest = z.infer<typeof TaskEditRequestSchema>;
 
 export const HistoryRequestSchema = z.object({
-  limit: z.number().int().min(1).max(1000).optional(),
+  page: z.number().int().min(1).optional(),
+  pageSize: z.number().int().min(1).max(100).optional(),
 });
 
 export type HistoryRequest = z.infer<typeof HistoryRequestSchema>;
@@ -117,6 +118,30 @@ export const APIKeysResponseSchema = BaseResponseSchema.extend({
 
 export type APIKeysResponse = z.infer<typeof APIKeysResponseSchema>;
 
+export const AgentInfoSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  status: z.string(),
+  created_at: z.string(),
+  updated_at: z.string(),
+});
+
+export type AgentInfo = z.infer<typeof AgentInfoSchema>;
+
+export const AgentResponseSchema = BaseResponseSchema.extend({
+  data: z.array(AgentInfoSchema),
+});
+
+export type AgentResponse = z.infer<typeof AgentResponseSchema>;
+
+export const PaginatedAgentResponseSchema = BaseResponseSchema.extend({
+  data: z.array(AgentInfoSchema),
+  pagination: PaginationSchema,
+});
+
+export type PaginatedAgentResponse = z.infer<typeof PaginatedAgentResponseSchema>;
+
 export const NewAPIKeyResponseSchema = BaseResponseSchema.extend({
   public_key: z.string(),
 });
@@ -139,6 +164,13 @@ export const TaskResponseSchema = BaseResponseSchema.extend({
 
 export type TaskResponse = z.infer<typeof TaskResponseSchema>;
 
+export const PaginatedTaskResponseSchema = BaseResponseSchema.extend({
+  data: z.array(TaskInfoSchema),
+  pagination: PaginationSchema,
+});
+
+export type PaginatedTaskResponse = z.infer<typeof PaginatedTaskResponseSchema>;
+
 export const StepInfoSchema = z.object({
   id: z.string(),
   task_id: z.string(),
@@ -156,6 +188,13 @@ export const StepResponseSchema = BaseResponseSchema.extend({
 
 export type StepResponse = z.infer<typeof StepResponseSchema>;
 
+export const PaginatedStepResponseSchema = BaseResponseSchema.extend({
+  data: z.array(StepInfoSchema),
+  pagination: PaginationSchema,
+});
+
+export type PaginatedStepResponse = z.infer<typeof PaginatedStepResponseSchema>;
+
 export const HistoryEntrySchema = z.object({
   id: z.string(),
   event: z.string(),
@@ -170,6 +209,13 @@ export const HistoryResponseSchema = BaseResponseSchema.extend({
 });
 
 export type HistoryResponse = z.infer<typeof HistoryResponseSchema>;
+
+export const PaginatedHistoryResponseSchema = BaseResponseSchema.extend({
+  data: z.array(HistoryEntrySchema),
+  pagination: PaginationSchema,
+});
+
+export type PaginatedHistoryResponse = z.infer<typeof PaginatedHistoryResponseSchema>;
 
 export const StatsResponseSchema = BaseResponseSchema.extend({
   data: z.record(z.unknown()),

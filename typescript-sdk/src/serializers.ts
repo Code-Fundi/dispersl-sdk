@@ -7,6 +7,174 @@
  */
 
 import { z } from 'zod';
+import { SerializationError } from './exceptions';
+
+// Re-export SerializationError for convenience
+export { SerializationError };
+
+/**
+ * JSON serializer class for handling JSON serialization/deserialization.
+ */
+export class JSONSerializer {
+  /**
+   * Serialize data to JSON string.
+   * 
+   * @param data - Data to serialize
+   * @param options - Serialization options
+   * @returns JSON string
+   * @throws SerializationError - If serialization fails
+   */
+  static serialize(data: unknown, options?: { indent?: number }): string {
+    try {
+      if (options?.indent) {
+        return JSON.stringify(data, null, options.indent);
+      }
+      return JSON.stringify(data);
+    } catch (error) {
+      throw new SerializationError(
+        `Failed to serialize data: ${error}`,
+        error as Error
+      );
+    }
+  }
+
+  /**
+   * Deserialize JSON string to data.
+   * 
+   * @param json - JSON string
+   * @returns Deserialized data
+   * @throws SerializationError - If deserialization fails
+   */
+  static deserialize<T = unknown>(json: string): T {
+    try {
+      return JSON.parse(json) as T;
+    } catch (error) {
+      throw new SerializationError(
+        `Failed to deserialize JSON: ${error}`,
+        error as Error
+      );
+    }
+  }
+}
+
+/**
+ * NDJSON (Newline Delimited JSON) parser for streaming responses.
+ */
+export class NDJSONParser {
+  private buffer: string = '';
+
+  /**
+   * Parse a chunk of NDJSON data.
+   * 
+   * @param chunk - Data chunk to parse
+   * @param options - Parsing options
+   * @returns Array of parsed objects
+   */
+  parse(chunk: string, options?: { skipInvalid?: boolean }): unknown[] {
+    this.buffer += chunk;
+    const lines = this.buffer.split('\n');
+    
+    // Keep the last incomplete line in the buffer
+    this.buffer = lines.pop() || '';
+    
+    const results: unknown[] = [];
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed) {
+        try {
+          results.push(JSON.parse(trimmed));
+        } catch (error) {
+          // Skip invalid JSON if option is set, otherwise throw
+          if (options?.skipInvalid) {
+            continue;
+          }
+          throw new SerializationError(
+            `Failed to parse NDJSON line: ${trimmed}`,
+            error as Error
+          );
+        }
+      }
+    }
+    
+    return results;
+  }
+
+  /**
+   * Flush remaining buffer content.
+   * 
+   * @param options - Flush options
+   * @returns Final parsed object if any
+   */
+  flush(options?: { throwOnInvalid?: boolean }): unknown | null {
+    if (this.buffer.trim()) {
+      try {
+        const result = JSON.parse(this.buffer);
+        this.buffer = '';
+        return result;
+      } catch (error) {
+        // Clear buffer and return null if option is false, otherwise throw
+        this.buffer = '';
+        if (options?.throwOnInvalid !== false) {
+          throw new SerializationError(
+            `Failed to parse remaining NDJSON: ${this.buffer}`,
+            error as Error
+          );
+        }
+        return null;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Reset the parser state.
+   */
+  reset(): void {
+    this.buffer = '';
+  }
+}
+
+/**
+ * Stream parser for handling streaming API responses.
+ */
+export class StreamParser {
+  private decoder: TextDecoder;
+  private parser: NDJSONParser;
+
+  constructor() {
+    this.decoder = new TextDecoder();
+    this.parser = new NDJSONParser();
+  }
+
+  /**
+   * Parse a stream chunk.
+   * 
+   * @param chunk - Stream chunk (Uint8Array or string)
+   * @param options - Parsing options
+   * @returns Array of parsed objects
+   */
+  parseChunk(chunk: Uint8Array | string, options?: { skipInvalid?: boolean }): unknown[] {
+    const text = typeof chunk === 'string' ? chunk : this.decoder.decode(chunk, { stream: true });
+    return this.parser.parse(text, options);
+  }
+
+  /**
+   * Flush and get remaining data.
+   * 
+   * @param options - Flush options
+   * @returns Final parsed object if any
+   */
+  flush(options?: { throwOnInvalid?: boolean }): unknown | null {
+    return this.parser.flush(options);
+  }
+
+  /**
+   * Reset the parser state.
+   */
+  reset(): void {
+    this.parser.reset();
+  }
+}
 
 /**
  * Serialize request data for API calls.

@@ -7,7 +7,7 @@
 
 import { Resource } from './base';
 import { HTTPClient } from '../http';
-import { HistoryRequest, HistoryResponse } from '../models';
+import { HistoryRequest, HistoryResponse, PaginatedHistoryResponse, PaginationParams } from '../models';
 
 /**
  * Resource for task and step history tracking.
@@ -20,17 +20,27 @@ export class HistoryResource extends Resource {
   }
 
   /**
+   * List all history entries (stub for testing).
+   * 
+   * @param params - Query parameters
+   * @returns History list
+   */
+  async list(params?: any): Promise<HistoryResponse> {
+    return this.get<HistoryResponse>('/history', params);
+  }
+
+  /**
    * Get task history by ID.
    * 
    * Retrieves the history for a specific task by its ID.
    * 
    * @param taskId - Task ID to retrieve history for
    * @param request - History request parameters
-   * @returns Task history
+   * @returns Task history with pagination info
    * @throws DisperslError - For various API errors
    */
-  async getTaskHistory(taskId: string, request?: HistoryRequest): Promise<HistoryResponse> {
-    return this.get<HistoryResponse>(`/history/task${taskId}`, request);
+  async getTaskHistory(taskId: string, request?: HistoryRequest): Promise<PaginatedHistoryResponse> {
+    return this.get<PaginatedHistoryResponse>(`/history/task/${taskId}`, request);
   }
 
   /**
@@ -40,10 +50,10 @@ export class HistoryResource extends Resource {
    * 
    * @param stepId - Step ID to retrieve history for
    * @param request - History request parameters
-   * @returns Step history
+   * @returns Step history with pagination info
    * @throws DisperslError - For various API errors
    */
-  async getStepHistory(stepId: string, request?: HistoryRequest): Promise<HistoryResponse> {
-    return this.get<HistoryResponse>(`/history/step/${stepId}`, request);
+  async getStepHistory(stepId: string, request?: HistoryRequest): Promise<PaginatedHistoryResponse> {
+    return this.get<PaginatedHistoryResponse>(`/history/step/${stepId}`, request);
   }
 }

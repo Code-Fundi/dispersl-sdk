@@ -40,12 +40,27 @@ export type ErrorResponse = z.infer<typeof ErrorResponseSchema>;
  * Provides common pagination fields used across the API.
  */
 export const PaginationParamsSchema = z.object({
-  limit: z.number().int().min(1).max(1000).optional(),
-  offset: z.number().int().min(0).optional(),
-  cursor: z.string().optional(),
+  page: z.number().int().min(1).optional(),
+  pageSize: z.number().int().min(1).max(100).optional(),
 });
 
 export type PaginationParams = z.infer<typeof PaginationParamsSchema>;
+
+/**
+ * Pagination metadata model.
+ * 
+ * Contains pagination information for paginated responses.
+ */
+export const PaginationSchema = z.object({
+  page: z.number().int(),
+  pageSize: z.number().int(),
+  total: z.number().int(),
+  totalPages: z.number().int(),
+  hasNext: z.boolean(),
+  hasPrev: z.boolean(),
+});
+
+export type Pagination = z.infer<typeof PaginationSchema>;
 
 /**
  * Paginated response model.
@@ -54,9 +69,7 @@ export type PaginationParams = z.infer<typeof PaginationParamsSchema>;
  */
 export const PaginatedResponseSchema = BaseResponseSchema.extend({
   data: z.array(z.unknown()),
-  has_more: z.boolean().optional(),
-  next_cursor: z.string().optional(),
-  total: z.number().int().optional(),
+  pagination: PaginationSchema,
 });
 
 export type PaginatedResponse<T = unknown> = z.infer<typeof PaginatedResponseSchema> & {

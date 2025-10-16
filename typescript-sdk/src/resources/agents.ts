@@ -14,6 +14,8 @@ import {
   DisperseRequest,
   RepoDocsRequest,
   StandardNdjsonResponse,
+  PaginatedAgentResponse,
+  PaginationParams,
 } from '../models';
 import { StandardNdjsonResponseSchema } from '../models/base';
 
@@ -26,6 +28,19 @@ import { StandardNdjsonResponseSchema } from '../models/base';
 export class AgentsResource extends Resource {
   constructor(httpClient: HTTPClient) {
     super(httpClient);
+  }
+
+  /**
+   * Get all agents.
+   * 
+   * Retrieves all available agents.
+   * 
+   * @param params - Pagination parameters
+   * @returns List of agents with pagination info
+   * @throws DisperslError - For various API errors
+   */
+  async list(params?: PaginationParams): Promise<PaginatedAgentResponse> {
+    return super.get<PaginatedAgentResponse>('/agents', params);
   }
 
   /**

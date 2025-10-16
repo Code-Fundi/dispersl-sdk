@@ -9,7 +9,7 @@ from typing import Any, Callable, Optional
 
 from pydantic import BaseModel, Field
 
-from .base import BaseResponse, Metadata
+from .base import BaseResponse, Metadata, Pagination
 
 # Request Models
 
@@ -86,7 +86,8 @@ class TaskEditRequest(BaseModel):
 class HistoryRequest(BaseModel):
     """Request model for history queries."""
 
-    limit: Optional[int] = Field(None, ge=1, le=1000, description="Number of items to return")
+    page: Optional[int] = Field(None, ge=1, description="Page number (1-based)")
+    pageSize: Optional[int] = Field(None, ge=1, le=100, description="Items per page")
 
 
 # Response Models
@@ -122,6 +123,30 @@ class APIKeysResponse(BaseResponse):
     api_keys: list[APIKeyInfo] = Field(..., description="List of API keys")
 
 
+class AgentInfo(BaseModel):
+    """Information about an agent."""
+
+    id: str = Field(..., description="Agent ID")
+    name: str = Field(..., description="Agent name")
+    description: str = Field(..., description="Agent description")
+    status: str = Field(..., description="Agent status")
+    created_at: str = Field(..., description="Creation timestamp")
+    updated_at: str = Field(..., description="Last update timestamp")
+
+
+class AgentResponse(BaseResponse):
+    """Response model for agent operations."""
+
+    data: list[AgentInfo] = Field(..., description="Agent data")
+
+
+class PaginatedAgentResponse(BaseResponse):
+    """Paginated response model for agent operations."""
+
+    data: list[AgentInfo] = Field(..., description="Agent data")
+    pagination: Pagination = Field(..., description="Pagination information")
+
+
 class NewAPIKeyResponse(BaseResponse):
     """Response model for new API key generation."""
 
@@ -144,6 +169,13 @@ class TaskResponse(BaseResponse):
     data: list[TaskInfo] = Field(..., description="Task data")
 
 
+class PaginatedTaskResponse(BaseResponse):
+    """Paginated response model for task operations."""
+
+    data: list[TaskInfo] = Field(..., description="Task data")
+    pagination: Pagination = Field(..., description="Pagination information")
+
+
 class StepInfo(BaseModel):
     """Information about a step."""
 
@@ -161,6 +193,13 @@ class StepResponse(BaseResponse):
     data: list[StepInfo] = Field(..., description="Step data")
 
 
+class PaginatedStepResponse(BaseResponse):
+    """Paginated response model for step operations."""
+
+    data: list[StepInfo] = Field(..., description="Step data")
+    pagination: Pagination = Field(..., description="Pagination information")
+
+
 class HistoryEntry(BaseModel):
     """History entry model."""
 
@@ -174,6 +213,13 @@ class HistoryResponse(BaseResponse):
     """Response model for history queries."""
 
     data: list[HistoryEntry] = Field(..., description="History data")
+
+
+class PaginatedHistoryResponse(BaseResponse):
+    """Paginated response model for history queries."""
+
+    data: list[HistoryEntry] = Field(..., description="History data")
+    pagination: Pagination = Field(..., description="Pagination information")
 
 
 class StatsResponse(BaseResponse):
@@ -236,6 +282,44 @@ class AgenticSession(BaseModel):
     )
     active_tools: list[str] = Field(default_factory=list, description="Active tools")
     tool_responses: list[ToolResponse] = Field(default_factory=list, description="Tool responses")
+    
+    # Backwards compatibility aliases
+    @property
+    def history(self) -> list[dict[str, Any]]:
+        """Alias for conversation_history."""
+        return self.conversation_history
+    
+    @property
+    def session_id(self) -> str:
+        """Alias for id."""
+        return self.id
+    
+    def add_message(self, role: str, content: str) -> None:
+        """Add a message to conversation history."""
+        from datetime import datetime
+        self.conversation_history.append({
+            "role": role,
+            "content": content,
+            "timestamp": datetime.now().isoformat()
+        })
+    
+    def update_context(self, updates: dict[str, Any]) -> None:
+        """Update session context with new values."""
+        self.context.update(updates)
+    
+    def clear_history(self) -> None:
+        """Clear conversation history."""
+        self.conversation_history.clear()
+    
+    def get_state(self) -> dict[str, Any]:
+        """Get full session state."""
+        return {
+            "session_id": self.id,
+            "context": self.context,
+            "history": self.conversation_history,
+            "active_tools": self.active_tools,
+            "tool_responses": [tr.dict() if hasattr(tr, 'dict') else tr for tr in self.tool_responses]
+        }
 
 
 class MCPTool(BaseModel):

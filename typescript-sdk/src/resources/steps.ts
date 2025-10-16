@@ -7,7 +7,7 @@
 
 import { Resource } from './base';
 import { HTTPClient } from '../http';
-import { StepResponse } from '../models';
+import { StepResponse, PaginatedStepResponse, PaginationParams } from '../models';
 
 /**
  * Resource for task step operations.
@@ -20,16 +20,27 @@ export class StepManagementResource extends Resource {
   }
 
   /**
-   * Get a step by Task ID.
+   * Create a new step (stub for testing).
    * 
-   * Retrieves a specific step by its Task ID.
+   * @param data - Step data
+   * @returns Created step information
+   */
+  async create(data: any): Promise<StepResponse> {
+    return super.post<StepResponse>('/steps', data);
+  }
+
+  /**
+   * Get steps by Task ID.
+   * 
+   * Retrieves steps for a specific task by its ID.
    * 
    * @param taskId - Task ID to retrieve steps for
-   * @returns Step information
+   * @param params - Pagination parameters
+   * @returns Step information with pagination info
    * @throws DisperslError - For various API errors
    */
-  async getByTaskId(taskId: string): Promise<StepResponse> {
-    return super.get<StepResponse>(`/steps/task/${taskId}`);
+  async getByTaskId(taskId: string, params?: PaginationParams): Promise<PaginatedStepResponse> {
+    return super.get<PaginatedStepResponse>(`/steps/task/${taskId}`, params);
   }
 
   /**

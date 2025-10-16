@@ -63,7 +63,7 @@ jobs:
         python-version: ['3.9', '3.12']
     env:
       # Dynamic API URL for testing
-      DISPERSL_API_URL: ${{ secrets.TEST_API_URL || 'http://localhost:3000' }}
+      DISPERSL_API_URL: ${{ secrets.TEST_API_URL || 'http://localhost:3001/v1' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -87,7 +87,7 @@ jobs:
           DISPERSL_API_URL: ${{ env.DISPERSL_API_URL }}
       
       - name: Run integration tests (if API available)
-        if: env.DISPERSL_API_URL != 'http://localhost:3000' || github.event_name == 'push'
+        if: env.DISPERSL_API_URL != 'http://localhost:3001/v1' || github.event_name == 'push'
         run: |
           cd python-sdk
           pytest tests/integration/ -v --cov=src --cov-append --cov-report=xml --cov-report=term || echo "Integration tests skipped"

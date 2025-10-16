@@ -7,7 +7,7 @@
 
 import { Resource } from './base';
 import { HTTPClient } from '../http';
-import { TaskEditRequest, TaskResponse } from '../models';
+import { TaskEditRequest, TaskResponse, PaginatedTaskResponse, PaginationParams } from '../models';
 
 /**
  * Resource for task lifecycle management.
@@ -50,11 +50,12 @@ export class TaskManagementResource extends Resource {
    * 
    * Retrieves all tasks for the authenticated user.
    * 
-   * @returns List of tasks
+   * @param params - Pagination parameters
+   * @returns List of tasks with pagination info
    * @throws DisperslError - For various API errors
    */
-  async list(): Promise<TaskResponse> {
-    return super.get<TaskResponse>('/tasks');
+  async list(params?: PaginationParams): Promise<PaginatedTaskResponse> {
+    return super.get<PaginatedTaskResponse>('/tasks', params);
   }
 
   /**

@@ -4,7 +4,7 @@
  */
 
 // Set default API URL for testing
-process.env.DISPERSL_API_URL = process.env.DISPERSL_API_URL || 'http://localhost:3000';
+process.env.DISPERSL_API_URL = process.env.DISPERSL_API_URL || 'http://localhost:3001/v1';
 process.env.DISPERSL_API_KEY = process.env.DISPERSL_API_KEY || 'test_api_key';
 
 // Log the API URL being used for tests
@@ -23,7 +23,7 @@ global.console = {
 
 // Export test utilities
 export const getTestApiUrl = (): string => {
-  return process.env.DISPERSL_API_URL || 'http://localhost:3000';
+  return process.env.DISPERSL_API_URL || 'http://localhost:3001/v1';
 };
 
 export const getTestApiKey = (): string => {

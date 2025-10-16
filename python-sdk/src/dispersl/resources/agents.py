@@ -16,7 +16,9 @@ from ..models.api import (
     ChatRequest,
     DisperseRequest,
     RepoDocsRequest,
+    PaginatedAgentResponse,
 )
+from ..models.base import PaginationParams
 from .base import AsyncResource, Resource
 
 logger = logging.getLogger(__name__)
@@ -29,6 +31,27 @@ class AgentsResource(Resource):
     Provides methods for interacting with various AI agents including
     chat, planning, code generation, testing, and documentation.
     """
+
+    def list(self, params: Optional[PaginationParams] = None) -> PaginatedAgentResponse:
+        """
+        Get all agents.
+
+        Retrieves all available agents.
+
+        Args:
+            params: Pagination parameters
+
+        Returns:
+            PaginatedAgentResponse: List of agents with pagination info
+
+        Raises:
+            DisperslError: For various API errors
+        """
+        return self.get(
+            "/agents",
+            params=params.dict(exclude_none=True) if params else None,
+            response_model=PaginatedAgentResponse,
+        )
 
     def chat(
         self,
@@ -430,6 +453,27 @@ class AsyncAgentsResource(AsyncResource):
     Provides async methods for interacting with various AI agents including
     chat, planning, code generation, testing, and documentation.
     """
+
+    async def list(self, params: Optional[PaginationParams] = None) -> PaginatedAgentResponse:
+        """
+        Async get all agents.
+
+        Retrieves all available agents.
+
+        Args:
+            params: Pagination parameters
+
+        Returns:
+            PaginatedAgentResponse: List of agents with pagination info
+
+        Raises:
+            DisperslError: For various API errors
+        """
+        return await self.get(
+            "/agents",
+            params=params.dict(exclude_none=True) if params else None,
+            response_model=PaginatedAgentResponse,
+        )
 
     async def chat(
         self,

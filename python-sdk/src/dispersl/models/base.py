@@ -35,18 +35,26 @@ class ErrorResponse(BaseResponse):
 class PaginationParams(BaseModel):
     """Pagination parameters for list endpoints."""
 
-    limit: Optional[int] = Field(None, ge=1, le=1000)
-    offset: Optional[int] = Field(None, ge=0)
-    cursor: Optional[str] = None
+    page: Optional[int] = Field(None, ge=1, description="Page number (1-based)")
+    pageSize: Optional[int] = Field(None, ge=1, le=100, description="Items per page")
+
+
+class Pagination(BaseModel):
+    """Pagination metadata model."""
+
+    page: int = Field(..., description="Current page number")
+    pageSize: int = Field(..., description="Number of items per page")
+    total: int = Field(..., description="Total number of items")
+    totalPages: int = Field(..., description="Total number of pages")
+    hasNext: bool = Field(..., description="Whether there is a next page")
+    hasPrev: bool = Field(..., description="Whether there is a previous page")
 
 
 class PaginatedResponse(BaseResponse):
     """Paginated response model."""
 
     data: list[Any]
-    has_more: Optional[bool] = None
-    next_cursor: Optional[str] = None
-    total: Optional[int] = None
+    pagination: Pagination
 
 
 class Metadata(BaseModel):

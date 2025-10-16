@@ -49,6 +49,9 @@ Documentation = "https://docs.dispersl.com"
 Repository = "https://github.com/code-fundi/dispersl-sdk"
 Issues = "https://github.com/code-fundi/dispersl-sdk/issues"
 
+[project.scripts]
+dispersl-test = "run_tests:main"
+
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"

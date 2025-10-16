@@ -8,7 +8,8 @@ the Dispersl API's task management endpoints.
 import logging
 from typing import Optional
 
-from ..models.api import TaskEditRequest, TaskResponse
+from ..models.api import TaskEditRequest, TaskResponse, PaginatedTaskResponse
+from ..models.base import PaginationParams
 from .base import AsyncResource, Resource
 
 logger = logging.getLogger(__name__)
@@ -71,21 +72,25 @@ class TaskManagementResource(Resource):
             response_model=TaskResponse,
         )
 
-    def list(self) -> TaskResponse:
+    def list(self, params: Optional[PaginationParams] = None) -> PaginatedTaskResponse:
         """
         Get all tasks.
 
         Retrieves all tasks for the authenticated user.
 
+        Args:
+            params: Pagination parameters
+
         Returns:
-            TaskResponse: List of tasks
+            PaginatedTaskResponse: List of tasks with pagination info
 
         Raises:
             DisperslError: For various API errors
         """
         return self.get(
             "/tasks",
-            response_model=TaskResponse,
+            params=params.dict(exclude_none=True) if params else None,
+            response_model=PaginatedTaskResponse,
         )
 
     def get(self, task_id: str) -> TaskResponse:
@@ -186,21 +191,25 @@ class AsyncTaskManagementResource(AsyncResource):
             response_model=TaskResponse,
         )
 
-    async def list(self) -> TaskResponse:
+    async def list(self, params: Optional[PaginationParams] = None) -> PaginatedTaskResponse:
         """
         Async get all tasks.
 
         Retrieves all tasks for the authenticated user.
 
+        Args:
+            params: Pagination parameters
+
         Returns:
-            TaskResponse: List of tasks
+            PaginatedTaskResponse: List of tasks with pagination info
 
         Raises:
             DisperslError: For various API errors
         """
         return await self.get(
             "/tasks",
-            response_model=TaskResponse,
+            params=params.dict(exclude_none=True) if params else None,
+            response_model=PaginatedTaskResponse,
         )
 
     async def get(self, task_id: str) -> TaskResponse:

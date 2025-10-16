@@ -5,7 +5,7 @@
  * for AI-driven software development.
  */
 
-export { Client } from './client';
+export { Client, Dispersl } from './client';
 export { AsyncClient } from './client';
 
 export { AgenticExecutor } from './agentic';
@@ -63,6 +63,9 @@ export {
   convertCamelToSnake,
   convertSnakeToCamel,
   CommonSchemas,
+  JSONSerializer,
+  NDJSONParser,
+  StreamParser,
 } from './serializers';
 
 export {
