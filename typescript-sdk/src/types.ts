@@ -42,28 +42,52 @@ export interface NDJSONChunk {
 
 export interface Agent {
   id: string;
-  name: string;
   name_id: string;
-  description: string;
-  prompt?: string;
-}
-
-export interface Task {
-  id?: string;
-  task_id?: string;
-  name?: string;
-  description?: string;
-  status?: string;
-  created_at?: string;
-}
-
-export interface Step {
-  id: string;
-  task_id: string;
   name: string;
+  description?: string;
+  prompt?: string;
+  model?: string;
+  category?: string;
+  public?: boolean;
+  active?: boolean;
+  stars_count?: number;
+  clone_count?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface AgentCreateRequest {
+  name: string;
+  prompt: string;
+  description?: string | null;
+  model?: string | null;
+  category?: string | null;
+  public?: boolean;
+}
+
+export interface AgentEditRequest {
+  name?: string;
+  prompt?: string;
+  description?: string | null;
+  model?: string | null;
+  category?: string | null;
+  public?: boolean;
+  active?: boolean;
+}
+
+export interface AgentResponse {
   status: string;
-  created_at: string;
-  updated_at: string;
+  message: string;
+  data: Agent[];
+}
+
+export interface DeleteAgentResponse {
+  status: string;
+  message: string;
+}
+
+export interface AgentCompletionRequest extends AgentRequestBase {
+  name_id: string;
 }
 
 export interface AgentRequestBase {
@@ -71,7 +95,7 @@ export interface AgentRequestBase {
   model?: string;
   context?: string[];
   task_id?: string;
-  knowledge?: string[];
+  knowledge?: string | string[];
   memory?: boolean;
   os?: string;
   default_dir?: string;
@@ -84,10 +108,9 @@ export interface AgentPlanRequest extends AgentRequestBase {
 }
 
 export type AgentEndpoint =
-  | "/agent"
-  | "/agent/chat"
+  | "/agent/completion"
   | "/agent/plan"
-  | "/agent/code"
-  | "/agent/test"
-  | "/agent/git"
-  | "/agent/document/repo";
+  | "/agents"
+  | "/agents/create"
+  | "/agents/edit/{id}"
+  | "/agents/{id}";

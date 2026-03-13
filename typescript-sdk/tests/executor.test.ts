@@ -24,7 +24,7 @@ describe("executor loop", () => {
 
     const client = {
       executePlan: vi.fn().mockResolvedValue(planStream),
-      executeAgent: vi.fn().mockResolvedValue(agentStream)
+      executeAgentCompletion: vi.fn().mockResolvedValue(agentStream)
     } as unknown as DisperslClient;
 
     const executor = new AgenticExecutor(client, async (tool) => ({
@@ -35,6 +35,47 @@ describe("executor loop", () => {
 
     const result = await executor.runPlanAndAgentLoop({ prompt: "build sdk", agentChoices: ["code"] });
     expect(result.events.length).toBeGreaterThan(0);
+    expect(result.toolResults.map((t) => t.toolName)).toContain("end_session");
+  });
+
+  it("supports direct single-agent completion loop until end_session", async () => {
+    const firstTurn = new ReadableStream<Uint8Array>({
+      start(controller) {
+        const enc = new TextEncoder();
+        controller.enqueue(enc.encode('{"status":"processing","message":"Tool calls","tools":[{"function":{"name":"read_file","arguments":"{\\"path\\":\\"README.md\\"}"}}]}\n'));
+        controller.enqueue(enc.encode('{"status":"complete","message":"turn1 done"}\n'));
+        controller.close();
+      }
+    });
+
+    const secondTurn = new ReadableStream<Uint8Array>({
+      start(controller) {
+        const enc = new TextEncoder();
+        controller.enqueue(enc.encode('{"status":"processing","message":"Tool calls","tools":[{"function":{"name":"end_session","arguments":"{}"}}]}\n'));
+        controller.enqueue(enc.encode('{"status":"complete","message":"turn2 done"}\n'));
+        controller.close();
+      }
+    });
+
+    const executeAgentCompletion = vi.fn()
+      .mockResolvedValueOnce(firstTurn)
+      .mockResolvedValueOnce(secondTurn);
+    const client = {
+      executeAgentCompletion
+    } as unknown as DisperslClient;
+
+    const executor = new AgenticExecutor(client, async (tool) => ({
+      toolName: tool.function.name,
+      status: "success",
+      output: tool.function.arguments
+    }));
+
+    const result = await executor.runAgentCompletionLoop({
+      nameId: "architect",
+      prompt: "Audit architecture"
+    });
+
+    expect(executeAgentCompletion).toHaveBeenCalledTimes(2);
     expect(result.toolResults.map((t) => t.toolName)).toContain("end_session");
   });
 });

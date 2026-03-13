@@ -23,9 +23,9 @@
 
 # Dispersl API SDKs
 
-A comprehensive collection of production-grade SDKs for the Dispersl API  [Dispersl]("https://dispersl.com"), The AI Dev Team, to give you multi-agents that work together to build software.
+A comprehensive collection of production-grade SDKs for the Dispersl API [Dispersl](https://dispersl.com).
 
-> Built for modern AI-driven development, with support for multiple LLM models, multi-agent planning, and full SDLC automation.
+> Flexible Workflow Automation with Plug-and-Play Agents. Dispersl helps you create flexible workflow automations powered by teams of AI, giving you intelligent and flexible automations with no-code workflows.
 
 ---
 
@@ -40,12 +40,27 @@ Production monorepo for official Dispersl SDKs:
 
 This implementation follows `DISPERSL_SDK_FULL IMPLEMENTATION.md` and includes:
 
-- full route matrix support,
+- full support for the current production API surface,
 - robust timeout/retry and typed error mapping,
 - NDJSON streaming parser with split-buffer safety,
 - handover parsing and executor loop semantics,
 - MCP config loading + runtime custom tool registry,
 - CI/release workflows for both SDKs.
+
+## Current API Coverage
+
+The SDKs currently target the updated API with these endpoint groups:
+
+- agent execution:
+  - `POST /agent/plan`
+  - `POST /agent/completion`
+  
+- custom agent lifecycle:
+  - `GET /agents`
+  - `POST /agents/create`
+  - `POST /agents/edit/{id}`
+  - `GET /agents/{id}`
+  - `DELETE /agents/{id}`
 
 ## Customizable Agent Choices
 
@@ -66,7 +81,7 @@ const client = new DisperslClient({
 const executor = new AgenticExecutor(client);
 await executor.runPlanAndAgentLoop({
   prompt: "Plan and execute migration",
-  agentChoices: ["architect", "implementer", "validator", "release-manager"]
+  agentChoices: ["auto"]
 });
 ```
 
@@ -80,7 +95,29 @@ executor = AgenticExecutor(client)
 
 result = await executor.run_plan_and_agent_loop(
     prompt="Plan and execute migration",
-    agent_choices=["architect", "implementer", "validator", "release-manager"],
+    agent_choices=["auto"],
+)
+```
+
+## Direct Completion Loop (Single Agent)
+
+Both SDKs support direct looping against `POST /agent/completion` for a single agent by `name_id` until `end_session`.
+
+TypeScript:
+
+```ts
+const out = await executor.runAgentCompletionLoop({
+  nameId: "architect",
+  prompt: "Review backend architecture and propose hardening steps",
+});
+```
+
+Python:
+
+```python
+out = await executor.run_agent_completion_loop(
+    name_id="architect",
+    prompt="Review backend architecture and propose hardening steps",
 )
 ```
 

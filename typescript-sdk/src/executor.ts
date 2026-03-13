@@ -22,6 +22,74 @@ export class AgenticExecutor {
 
   constructor(private readonly client: DisperslClient, private readonly toolExecutor?: ToolExecutorFn) {}
 
+  async runAgentCompletionLoop(args: {
+    nameId: string;
+    prompt: string;
+    model?: string;
+    taskId?: string;
+    mcpOverride?: Partial<McpConfig>;
+    maxLoops?: number;
+  }): Promise<{ taskId: string; events: NDJSONChunk[]; toolResults: ToolResult[] }> {
+    const taskId = args.taskId ?? randomUUID();
+    const maxLoops = args.maxLoops ?? 50;
+    const events: NDJSONChunk[] = [];
+    const toolResults: ToolResult[] = [];
+
+    const localMcp = this.mcpLoader.loadFromDefaultPath();
+    const mergedMcp = this.mcpLoader.merge(localMcp, args.mcpOverride);
+    const runtimeTools = this.mcpTools.list().map((tool) => ({
+      name: tool.name,
+      description: tool.description,
+      inputSchema: tool.parameters
+    }));
+
+    let currentPrompt = args.prompt;
+    let loop = 0;
+    let keepRunning = true;
+
+    while (keepRunning && loop < maxLoops) {
+      loop += 1;
+      const stream = await this.client.executeAgentCompletion({
+        name_id: args.nameId,
+        prompt: currentPrompt,
+        ...(args.model ? { model: args.model } : {}),
+        task_id: taskId,
+        mcp: { ...mergedMcp, tools: runtimeTools }
+      });
+
+      let nextAction: NextAction = { type: "none" };
+      const turnToolResults: ToolResult[] = [];
+
+      await this.parser.parse(stream, async (chunk) => {
+        events.push(chunk);
+        if (!chunk.tools?.length) return;
+        for (const tool of chunk.tools) {
+          nextAction = mergeNextAction(nextAction, nextActionFromTool(tool));
+          if (!this.toolExecutor) continue;
+          const result = await this.toolExecutor(tool);
+          turnToolResults.push(result);
+          toolResults.push(result);
+          if (result.status === "error") {
+            throw new ToolExecutionError(`Tool ${result.toolName} failed: ${result.error ?? "unknown"}`);
+          }
+        }
+      });
+
+      if (nextAction.type === "end") {
+        keepRunning = false;
+        continue;
+      }
+
+      if (turnToolResults.length > 0) {
+        currentPrompt = this.buildSingleAgentToolFeedbackPrompt(args.nameId, currentPrompt, turnToolResults);
+      } else {
+        keepRunning = false;
+      }
+    }
+
+    return { taskId, events, toolResults };
+  }
+
   async runPlanAndAgentLoop(args: {
     prompt: string;
     agentChoices: string[];
@@ -60,7 +128,7 @@ export class AgenticExecutor {
             task_id: taskId,
             mcp: { ...mergedMcp, tools: runtimeTools }
           })
-        : await this.client.executeAgent({
+        : await this.client.executeAgentCompletion({
             name_id: currentAgent ?? "",
             prompt: currentPrompt,
             ...(args.model ? { model: args.model } : {}),
@@ -135,6 +203,20 @@ export class AgenticExecutor {
       "Tool results:",
       ...lines,
       "Decide your next step. If another specialist is needed, call handover_task. If done, call end_session."
+    ].join("\n");
+  }
+
+  private buildSingleAgentToolFeedbackPrompt(agentId: string, previousPrompt: string, toolResults: ToolResult[]): string {
+    const lines = toolResults.map((r, idx) => {
+      const resultText = r.status === "success" ? r.output : `ERROR: ${r.error ?? "unknown"}`;
+      return `${idx + 1}. ${r.toolName} => ${r.status.toUpperCase()} => ${resultText}`;
+    });
+    return [
+      `You are ${agentId} continuing the same task.`,
+      `Previous assignment: ${previousPrompt}`,
+      "Tool results:",
+      ...lines,
+      "Continue as the same agent and call end_session when complete. Do not hand over to another agent."
     ].join("\n");
   }
 }
