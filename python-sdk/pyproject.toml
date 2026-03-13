@@ -33,3 +33,9 @@ select = ["E", "F", "I", "N", "UP", "B", "A", "C4", "SIM", "RUF"]
 python_version = "3.9"
 strict = true
 ignore_missing_imports = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dispersl"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/dispersl", "tests", "README.md", "pyproject.toml"]
