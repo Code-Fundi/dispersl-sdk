@@ -36,11 +36,7 @@ def _parse_loose_object(value: Any) -> dict[str, Any]:
 
 
 def next_action_from_tool(raw_tool: dict[str, Any]) -> NextAction:
-    function = (
-        raw_tool.get("function", {})
-        if isinstance(raw_tool.get("function"), dict)
-        else {}
-    )
+    function = raw_tool.get("function", {}) if isinstance(raw_tool.get("function"), dict) else {}
     name = (
         _clean(function.get("name"))
         or _clean(raw_tool.get("type"))

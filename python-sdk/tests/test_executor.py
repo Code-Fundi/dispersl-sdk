@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 from dispersl.executor import AgenticExecutor, ToolResult
@@ -14,15 +16,20 @@ class _FakeResponse:
 
 class _FakeClient:
     async def agent_plan(self, _body):
-        handover_args = '{"agent_name":"code","prompt":"go"}'
-        handover_args_escaped = handover_args.replace('"', '\\"')
-        processing_line = (
-            '{"status":"processing","message":"Tool calls",'
-            '"tools":[{"function":{"name":"handover_task",'
-            '"arguments":"'
-            + handover_args_escaped
-            + '"}}]}\n'
-        )
+        handover_args = json.dumps({"agent_name": "code", "prompt": "go"})
+        payload = {
+            "status": "processing",
+            "message": "Tool calls",
+            "tools": [
+                {
+                    "function": {
+                        "name": "handover_task",
+                        "arguments": handover_args,
+                    }
+                }
+            ],
+        }
+        processing_line = json.dumps(payload, separators=(",", ":")) + "\n"
         return _FakeResponse(
             [
                 processing_line,
@@ -31,11 +38,12 @@ class _FakeClient:
         )
 
     async def agent(self, _body):
-        processing_line = (
-            '{"status":"processing","message":"Tool calls",'
-            '"tools":[{"function":{"name":"end_session",'
-            '"arguments":"{}"}}]}\n'
-        )
+        payload = {
+            "status": "processing",
+            "message": "Tool calls",
+            "tools": [{"function": {"name": "end_session", "arguments": "{}"}}],
+        }
+        processing_line = json.dumps(payload, separators=(",", ":")) + "\n"
         return _FakeResponse(
             [
                 processing_line,
@@ -54,7 +62,10 @@ async def test_executor_loop() -> None:
         )
 
     executor = AgenticExecutor(_FakeClient(), tool_exec)
-    out = await executor.run_plan_and_agent_loop(prompt="Build SDK", agent_choices=["code"])
+    out = await executor.run_plan_and_agent_loop(
+        prompt="Build SDK",
+        agent_choices=["code"],
+    )
     assert out["task_id"]
     assert len(out["events"]) > 0
     assert any(t["tool_name"] == "end_session" for t in out["tool_results"])
