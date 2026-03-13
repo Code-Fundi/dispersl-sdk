@@ -19,7 +19,9 @@ class _FakeClient:
         processing_line = (
             '{"status":"processing","message":"Tool calls",'
             '"tools":[{"function":{"name":"handover_task",'
-            f'"arguments":"{handover_args_escaped}"}}]}\n'
+            '"arguments":"'
+            + handover_args_escaped
+            + '"}}]}\n'
         )
         return _FakeResponse(
             [

@@ -10,8 +10,8 @@ from .errors import (
     AuthenticationError,
     ConflictError,
     NotFoundError,
-    RequestTimeoutError,
     RateLimitError,
+    RequestTimeoutError,
     ServerError,
     ValidationError,
 )
