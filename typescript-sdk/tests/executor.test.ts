@@ -1,0 +1,40 @@
+import { describe, expect, it, vi } from "vitest";
+import { AgenticExecutor } from "../src/executor";
+import type { DisperslClient } from "../src/client";
+
+describe("executor loop", () => {
+  it("continues with tool feedback when tool executes and no explicit handover/end", async () => {
+    const planStream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        const enc = new TextEncoder();
+        controller.enqueue(enc.encode('{"status":"processing","message":"Tool calls","tools":[{"function":{"name":"handover_task","arguments":"{\\"agent_name\\":\\"code\\",\\"prompt\\":\\"go\\"}"}}]}\n'));
+        controller.enqueue(enc.encode('{"status":"complete","message":"done"}\n'));
+        controller.close();
+      }
+    });
+
+    const agentStream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        const enc = new TextEncoder();
+        controller.enqueue(enc.encode('{"status":"processing","message":"Tool calls","tools":[{"function":{"name":"end_session","arguments":"{}"}}]}\n'));
+        controller.enqueue(enc.encode('{"status":"complete","message":"done"}\n'));
+        controller.close();
+      }
+    });
+
+    const client = {
+      executePlan: vi.fn().mockResolvedValue(planStream),
+      executeAgent: vi.fn().mockResolvedValue(agentStream)
+    } as unknown as DisperslClient;
+
+    const executor = new AgenticExecutor(client, async (tool) => ({
+      toolName: tool.function.name,
+      status: "success",
+      output: tool.function.arguments
+    }));
+
+    const result = await executor.runPlanAndAgentLoop({ prompt: "build sdk", agentChoices: ["code"] });
+    expect(result.events.length).toBeGreaterThan(0);
+    expect(result.toolResults.map((t) => t.toolName)).toContain("end_session");
+  });
+});

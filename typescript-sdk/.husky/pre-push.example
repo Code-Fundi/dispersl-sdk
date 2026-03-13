@@ -1,4 +1,0 @@
-cd typescript-sdk
-pnpm run build
-pnpm run test
-

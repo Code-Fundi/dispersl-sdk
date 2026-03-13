@@ -1,56 +1,13 @@
-"""
-Dispersl Python SDK
+from .client import AsyncDisperslClient
+from .executor import AgenticExecutor, ToolResult
+from .mcp import MCPConfig, MCPConfigLoader, MCPRegistry, MCPTool
 
-Official Python SDK for the Dispersl API - an agentic workflow platform
-for AI-driven software development.
-"""
-
-from .agentic import AgenticExecutor
-from .client import AsyncClient, Client
-from .exceptions import (
-    AuthenticationError,
-    DisperslError,
-    NetworkError,
-    NotFoundError,
-    RateLimitError,
-    SerializationError,
-    ServerError,
-    TimeoutError,
-    ValidationError,
-)
-from .models import StandardNdjsonResponse
-from .models.api import (
-    AgenticSession,
-    HandoverRequest,
-    MCPClient,
-    MCPTool,
-    ToolCall,
-    ToolResponse,
-)
-
-# Backward compatibility alias
-Dispersl = Client
-
-__version__ = "0.1.0"
 __all__ = [
+    "AsyncDisperslClient",
     "AgenticExecutor",
-    "AgenticSession",
-    "AsyncClient",
-    "AuthenticationError",
-    "Client",
-    "Dispersl",
-    "DisperslError",
-    "HandoverRequest",
-    "MCPClient",
+    "ToolResult",
+    "MCPConfig",
+    "MCPConfigLoader",
+    "MCPRegistry",
     "MCPTool",
-    "NetworkError",
-    "NotFoundError",
-    "RateLimitError",
-    "SerializationError",
-    "ServerError",
-    "StandardNdjsonResponse",
-    "TimeoutError",
-    "ToolCall",
-    "ToolResponse",
-    "ValidationError",
 ]

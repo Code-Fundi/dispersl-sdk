@@ -1,266 +1,91 @@
-"""
-Main client class for the Dispersl SDK.
+from __future__ import annotations
 
-This module provides the main Client and AsyncClient classes that serve
-as the primary interface for interacting with the Dispersl API.
-"""
+from typing import Any
 
-import logging
-from typing import Any, Optional, Union
-
-from .auth import AuthHandler, create_auth_handler
-from .exceptions import DisperslError
-from .http import AsyncHTTPClient, HTTPClient
-from .resources import (
-    AgentsResource,
-    AuthenticationResource,
-    HistoryResource,
-    ModelsResource,
-    StepManagementResource,
-    TaskManagementResource,
-)
-
-logger = logging.getLogger(__name__)
+from .http import AsyncHttpClient
 
 
-class Client:
-    """
-    Main client for the Dispersl API.
+class AsyncDisperslClient:
+    def __init__(self, base_url: str, api_key: str, timeout_s: float = 120.0, retry_attempts: int = 3) -> None:
+        self.http = AsyncHttpClient(base_url, api_key, timeout_s=timeout_s, retry_attempts=retry_attempts)
 
-    This client provides a high-level interface for interacting with
-    the Dispersl API, including all available endpoints and resources.
+    # Agent endpoints
+    async def agent(self, body: dict[str, Any]) -> Any:
+        return await self.http.request("POST", "/agent", json_body=body)
 
-    Example:
-        ```python
-        from dispersl import Client
+    async def agent_chat(self, body: dict[str, Any]) -> Any:
+        return await self.http.request("POST", "/agent/chat", json_body=body)
 
-        client = Client(api_key="your_api_key")
-        response = client.agents.chat(prompt="Hello, world!")
-        ```
-    """
+    async def agent_plan(self, body: dict[str, Any]) -> Any:
+        return await self.http.request("POST", "/agent/plan", json_body=body)
 
-    def __init__(
-        self,
-        api_key: Optional[str] = None,
-        base_url: str = "https://api.dispersl.com/v1",
-        timeout: float = 30.0,
-        connect_timeout: float = 10.0,
-        max_retries: int = 3,
-        backoff_factor: float = 2.0,
-        headers: Optional[dict[str, str]] = None,
-        auth: Optional[Union[str, AuthHandler]] = None,
-    ) -> None:
-        """
-        Initialize the Dispersl client.
+    async def agent_code(self, body: dict[str, Any]) -> Any:
+        return await self.http.request("POST", "/agent/code", json_body=body)
 
-        Args:
-            api_key: API key for authentication (alternative to auth)
-            base_url: Base URL for API requests
-            timeout: Total request timeout in seconds
-            connect_timeout: Connection timeout in seconds
-            max_retries: Maximum number of retry attempts
-            backoff_factor: Exponential backoff multiplier
-            headers: Additional headers for all requests
-            auth: Authentication handler (alternative to api_key)
+    async def agent_test(self, body: dict[str, Any]) -> Any:
+        return await self.http.request("POST", "/agent/test", json_body=body)
 
-        Raises:
-            DisperslError: If authentication is not provided
-        """
-        # Set up authentication
-        if auth is not None:
-            self.auth = create_auth_handler(auth)
-        elif api_key is not None:
-            self.auth = create_auth_handler(api_key)
-        else:
-            self.auth = create_auth_handler()
+    async def agent_git(self, body: dict[str, Any]) -> Any:
+        return await self.http.request("POST", "/agent/git", json_body=body)
 
-        if self.auth is None:
-            raise DisperslError(
-                "Authentication required. Provide api_key or auth parameter, "
-                "or set DISPERSL_API_KEY environment variable."
-            )
+    async def agent_document_repo(self, body: dict[str, Any]) -> Any:
+        return await self.http.request("POST", "/agent/document/repo", json_body=body)
 
-        # Prepare headers
-        auth_headers = self.auth.get_headers()
-        all_headers = {**(headers or {}), **auth_headers}
+    # Models
+    async def models(self) -> Any:
+        return await self.http.request("GET", "/models")
 
-        # Initialize HTTP client
-        self.http = HTTPClient(
-            base_url=base_url,
-            timeout=timeout,
-            connect_timeout=connect_timeout,
-            max_retries=max_retries,
-            backoff_factor=backoff_factor,
-            headers=all_headers,
-        )
+    # API keys
+    async def keys(self) -> Any:
+        return await self.http.request("GET", "/keys")
 
-        # Initialize resources
-        self.agents = AgentsResource(self.http)
-        self.models = ModelsResource(self.http)
-        self.auth_resource = AuthenticationResource(self.http)
-        self.tasks = TaskManagementResource(self.http)
-        self.steps = StepManagementResource(self.http)
-        self.history = HistoryResource(self.http)
+    async def keys_new(self, user_id: str, name: str | None = None) -> Any:
+        return await self.http.request("POST", "/keys/new", json_body={"user_id": user_id, "name": name})
 
-        logger.info(f"Dispersl client initialized for {base_url}")
+    # Tasks
+    async def tasks_new(self) -> Any:
+        return await self.http.request("POST", "/tasks/new")
 
-    def __enter__(self) -> "Client":
-        """Context manager entry."""
-        return self
+    async def tasks_edit(self, task_id: str, body: dict[str, Any]) -> Any:
+        return await self.http.request("POST", f"/tasks/{task_id}/edit", json_body=body)
 
-    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
-        """Context manager exit."""
-        self.close()
+    async def tasks(self, limit: int = 20, next_token: str | None = None) -> Any:
+        query = f"limit={limit}" + (f"&nextToken={next_token}" if next_token else "")
+        return await self.http.request("GET", f"/tasks?{query}")
 
-    def close(self) -> None:
-        """Close the client and cleanup resources."""
-        self.http.close()
-        logger.info("Dispersl client closed")
+    async def task(self, task_id: str) -> Any:
+        return await self.http.request("GET", f"/tasks/{task_id}")
 
-    def get_version(self) -> str:
-        """
-        Get the SDK version.
+    async def task_delete(self, task_id: str) -> Any:
+        return await self.http.request("DELETE", f"/tasks/{task_id}/delete")
 
-        Returns:
-            SDK version string
-        """
-        from . import __version__
+    # Agents
+    async def agents(self, limit: int = 20, next_token: str | None = None) -> Any:
+        query = f"limit={limit}" + (f"&nextToken={next_token}" if next_token else "")
+        return await self.http.request("GET", f"/agents?{query}")
 
-        return __version__
+    async def agent_by_id(self, agent_id: str) -> Any:
+        return await self.http.request("GET", f"/agents/{agent_id}")
 
-    def get_base_url(self) -> str:
-        """
-        Get the base URL for API requests.
+    # Steps
+    async def steps_by_task(self, task_id: str, limit: int = 20, next_token: str | None = None) -> Any:
+        query = f"limit={limit}" + (f"&nextToken={next_token}" if next_token else "")
+        return await self.http.request("GET", f"/steps/task/{task_id}?{query}")
 
-        Returns:
-            Base URL string
-        """
-        return self.http.base_url
+    async def step(self, step_id: str) -> Any:
+        return await self.http.request("GET", f"/steps/{step_id}")
 
+    async def step_delete(self, step_id: str) -> Any:
+        return await self.http.request("DELETE", f"/steps/{step_id}/delete")
 
-class AsyncClient:
-    """
-    Async client for the Dispersl API.
+    # History
+    async def history_task(self, task_id: str, limit: int = 20, next_token: str | None = None) -> Any:
+        query = f"limit={limit}" + (f"&nextToken={next_token}" if next_token else "")
+        return await self.http.request("GET", f"/history/task/{task_id}?{query}")
 
-    This client provides an async interface for interacting with
-    the Dispersl API, supporting async/await patterns.
+    async def history_step(self, step_id: str, limit: int = 20, next_token: str | None = None) -> Any:
+        query = f"limit={limit}" + (f"&nextToken={next_token}" if next_token else "")
+        return await self.http.request("GET", f"/history/step/{step_id}?{query}")
 
-    Example:
-        ```python
-        import asyncio
-        from dispersl import AsyncClient
-
-        async def main():
-            async with AsyncClient(api_key="your_api_key") as client:
-                response = await client.agents.chat(prompt="Hello, world!")
-
-        asyncio.run(main())
-        ```
-    """
-
-    def __init__(
-        self,
-        api_key: Optional[str] = None,
-        base_url: str = "https://api.dispersl.com/v1",
-        timeout: float = 30.0,
-        connect_timeout: float = 10.0,
-        max_retries: int = 3,
-        backoff_factor: float = 2.0,
-        headers: Optional[dict[str, str]] = None,
-        auth: Optional[Union[str, AuthHandler]] = None,
-    ) -> None:
-        """
-        Initialize the async Dispersl client.
-
-        Args:
-            api_key: API key for authentication (alternative to auth)
-            base_url: Base URL for API requests
-            timeout: Total request timeout in seconds
-            connect_timeout: Connection timeout in seconds
-            max_retries: Maximum number of retry attempts
-            backoff_factor: Exponential backoff multiplier
-            headers: Additional headers for all requests
-            auth: Authentication handler (alternative to api_key)
-
-        Raises:
-            DisperslError: If authentication is not provided
-        """
-        # Set up authentication
-        if auth is not None:
-            self.auth = create_auth_handler(auth)
-        elif api_key is not None:
-            self.auth = create_auth_handler(api_key)
-        else:
-            self.auth = create_auth_handler()
-
-        if self.auth is None:
-            raise DisperslError(
-                "Authentication required. Provide api_key or auth parameter, "
-                "or set DISPERSL_API_KEY environment variable."
-            )
-
-        # Prepare headers
-        auth_headers = self.auth.get_headers()
-        all_headers = {**(headers or {}), **auth_headers}
-
-        # Initialize async HTTP client
-        self.http = AsyncHTTPClient(
-            base_url=base_url,
-            timeout=timeout,
-            connect_timeout=connect_timeout,
-            max_retries=max_retries,
-            backoff_factor=backoff_factor,
-            headers=all_headers,
-        )
-
-        # Initialize async resources
-        from .resources import (
-            AsyncAgentsResource,
-            AsyncAuthenticationResource,
-            AsyncHistoryResource,
-            AsyncModelsResource,
-            AsyncStepManagementResource,
-            AsyncTaskManagementResource,
-        )
-
-        self.agents = AsyncAgentsResource(self.http)
-        self.models = AsyncModelsResource(self.http)
-        self.auth_resource = AsyncAuthenticationResource(self.http)
-        self.tasks = AsyncTaskManagementResource(self.http)
-        self.steps = AsyncStepManagementResource(self.http)
-        self.history = AsyncHistoryResource(self.http)
-
-        logger.info(f"Async Dispersl client initialized for {base_url}")
-
-    async def __aenter__(self) -> "AsyncClient":
-        """Async context manager entry."""
-        return self
-
-    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
-        """Async context manager exit."""
-        await self.close()
-
-    async def close(self) -> None:
-        """Close the async client and cleanup resources."""
-        await self.http.close()
-        logger.info("Async Dispersl client closed")
-
-    def get_version(self) -> str:
-        """
-        Get the SDK version.
-
-        Returns:
-            SDK version string
-        """
-        from . import __version__
-
-        return __version__
-
-    def get_base_url(self) -> str:
-        """
-        Get the base URL for API requests.
-
-        Returns:
-            Base URL string
-        """
-        return self.http.base_url
+    async def aclose(self) -> None:
+        await self.http.aclose()
