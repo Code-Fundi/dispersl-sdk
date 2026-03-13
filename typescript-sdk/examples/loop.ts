@@ -15,7 +15,7 @@ const executor = new AgenticExecutor(client, async (tool): Promise<{ toolName: s
 const run = async () => {
   const out = await executor.runPlanAndAgentLoop({
     prompt: "Plan and build API SDK integration",
-    agentChoices: ["code", "test", "git", "docs"]
+    agentChoices: ["auto"]
   });
   console.log("taskId", out.taskId);
   console.log("eventCount", out.events.length);

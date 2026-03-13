@@ -47,7 +47,7 @@ class AgentRequestBase(BaseModel):
     model: str | None = None
     context: list[str] | None = None
     task_id: str | None = None
-    knowledge: list[str] | None = None
+    knowledge: str | list[str] | None = None
     memory: bool | None = None
     os: str | None = None
     default_dir: str | None = None
