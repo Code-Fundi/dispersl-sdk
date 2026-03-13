@@ -14,17 +14,29 @@ class _FakeResponse:
 
 class _FakeClient:
     async def agent_plan(self, _body):
+        handover_args = '{"agent_name":"code","prompt":"go"}'
+        handover_args_escaped = handover_args.replace('"', '\\"')
+        processing_line = (
+            '{"status":"processing","message":"Tool calls",'
+            '"tools":[{"function":{"name":"handover_task",'
+            f'"arguments":"{handover_args_escaped}"}}]}\n'
+        )
         return _FakeResponse(
             [
-                '{"status":"processing","message":"Tool calls","tools":[{"function":{"name":"handover_task","arguments":"{\\"agent_name\\":\\"code\\",\\"prompt\\":\\"go\\"}"}}]}\n',
+                processing_line,
                 '{"status":"complete","message":"done"}\n',
             ]
         )
 
     async def agent(self, _body):
+        processing_line = (
+            '{"status":"processing","message":"Tool calls",'
+            '"tools":[{"function":{"name":"end_session",'
+            '"arguments":"{}"}}]}\n'
+        )
         return _FakeResponse(
             [
-                '{"status":"processing","message":"Tool calls","tools":[{"function":{"name":"end_session","arguments":"{}"}}]}\n',
+                processing_line,
                 '{"status":"complete","message":"done"}\n',
             ]
         )
@@ -33,7 +45,11 @@ class _FakeClient:
 @pytest.mark.asyncio
 async def test_executor_loop() -> None:
     async def tool_exec(tool):
-        return ToolResult(tool_name=tool["function"]["name"], status="success", output=tool["function"]["arguments"])
+        return ToolResult(
+            tool_name=tool["function"]["name"],
+            status="success",
+            output=tool["function"]["arguments"],
+        )
 
     executor = AgenticExecutor(_FakeClient(), tool_exec)
     out = await executor.run_plan_and_agent_loop(prompt="Build SDK", agent_choices=["code"])

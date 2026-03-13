@@ -2,15 +2,17 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class PaginationInfo(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     limit: int
-    hasNext: bool
-    hasPrev: bool
-    nextToken: str | None = None
-    prevToken: str | None = None
+    has_next: bool = Field(alias="hasNext")
+    has_prev: bool = Field(alias="hasPrev")
+    next_token: str | None = Field(default=None, alias="nextToken")
+    prev_token: str | None = Field(default=None, alias="prevToken")
 
 
 class PaginatedResponse(BaseModel):

@@ -10,9 +10,9 @@ from .errors import (
     AuthenticationError,
     ConflictError,
     NotFoundError,
+    RequestTimeoutError,
     RateLimitError,
     ServerError,
-    TimeoutError,
     ValidationError,
 )
 
@@ -32,7 +32,13 @@ def _map_status(code: int, message: str) -> Exception:
 
 
 class AsyncHttpClient:
-    def __init__(self, base_url: str, api_key: str, timeout_s: float = 120.0, retry_attempts: int = 3) -> None:
+    def __init__(
+        self,
+        base_url: str,
+        api_key: str,
+        timeout_s: float = 120.0,
+        retry_attempts: int = 3,
+    ) -> None:
         self.base_url = base_url.rstrip("/")
         self.timeout_s = timeout_s
         self.retry_attempts = retry_attempts
@@ -59,7 +65,7 @@ class AsyncHttpClient:
                     continue
                 raise _map_status(response.status_code, response.text)
             except httpx.TimeoutException as exc:
-                last_error = TimeoutError(str(exc))
+                last_error = RequestTimeoutError(str(exc))
                 if attempt < self.retry_attempts:
                     delay = min(0.3 * (2**attempt) + random.random() * 0.1, 10.0)
                     await asyncio.sleep(delay)

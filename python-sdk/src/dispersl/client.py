@@ -6,8 +6,19 @@ from .http import AsyncHttpClient
 
 
 class AsyncDisperslClient:
-    def __init__(self, base_url: str, api_key: str, timeout_s: float = 120.0, retry_attempts: int = 3) -> None:
-        self.http = AsyncHttpClient(base_url, api_key, timeout_s=timeout_s, retry_attempts=retry_attempts)
+    def __init__(
+        self,
+        base_url: str,
+        api_key: str,
+        timeout_s: float = 120.0,
+        retry_attempts: int = 3,
+    ) -> None:
+        self.http = AsyncHttpClient(
+            base_url,
+            api_key,
+            timeout_s=timeout_s,
+            retry_attempts=retry_attempts,
+        )
 
     # Agent endpoints
     async def agent(self, body: dict[str, Any]) -> Any:
@@ -40,7 +51,11 @@ class AsyncDisperslClient:
         return await self.http.request("GET", "/keys")
 
     async def keys_new(self, user_id: str, name: str | None = None) -> Any:
-        return await self.http.request("POST", "/keys/new", json_body={"user_id": user_id, "name": name})
+        return await self.http.request(
+            "POST",
+            "/keys/new",
+            json_body={"user_id": user_id, "name": name},
+        )
 
     # Tasks
     async def tasks_new(self) -> Any:
@@ -68,7 +83,12 @@ class AsyncDisperslClient:
         return await self.http.request("GET", f"/agents/{agent_id}")
 
     # Steps
-    async def steps_by_task(self, task_id: str, limit: int = 20, next_token: str | None = None) -> Any:
+    async def steps_by_task(
+        self,
+        task_id: str,
+        limit: int = 20,
+        next_token: str | None = None,
+    ) -> Any:
         query = f"limit={limit}" + (f"&nextToken={next_token}" if next_token else "")
         return await self.http.request("GET", f"/steps/task/{task_id}?{query}")
 
@@ -79,11 +99,21 @@ class AsyncDisperslClient:
         return await self.http.request("DELETE", f"/steps/{step_id}/delete")
 
     # History
-    async def history_task(self, task_id: str, limit: int = 20, next_token: str | None = None) -> Any:
+    async def history_task(
+        self,
+        task_id: str,
+        limit: int = 20,
+        next_token: str | None = None,
+    ) -> Any:
         query = f"limit={limit}" + (f"&nextToken={next_token}" if next_token else "")
         return await self.http.request("GET", f"/history/task/{task_id}?{query}")
 
-    async def history_step(self, step_id: str, limit: int = 20, next_token: str | None = None) -> Any:
+    async def history_step(
+        self,
+        step_id: str,
+        limit: int = 20,
+        next_token: str | None = None,
+    ) -> Any:
         query = f"limit={limit}" + (f"&nextToken={next_token}" if next_token else "")
         return await self.http.request("GET", f"/history/step/{step_id}?{query}")
 

@@ -36,8 +36,16 @@ def _parse_loose_object(value: Any) -> dict[str, Any]:
 
 
 def next_action_from_tool(raw_tool: dict[str, Any]) -> NextAction:
-    function = raw_tool.get("function", {}) if isinstance(raw_tool.get("function"), dict) else {}
-    name = _clean(function.get("name")) or _clean(raw_tool.get("type")) or _clean(raw_tool.get("name"))
+    function = (
+        raw_tool.get("function", {})
+        if isinstance(raw_tool.get("function"), dict)
+        else {}
+    )
+    name = (
+        _clean(function.get("name"))
+        or _clean(raw_tool.get("type"))
+        or _clean(raw_tool.get("name"))
+    )
     if not name:
         return NextAction(type="none")
     if name in {"end_session", "finish_task"}:
@@ -47,6 +55,17 @@ def next_action_from_tool(raw_tool: dict[str, Any]) -> NextAction:
 
     args = _parse_loose_object(function.get("arguments", raw_tool.get("arguments")))
     merged = {**raw_tool, **args}
-    to_agent = _clean(merged.get("agent_name")) or _clean(merged.get("to_agent")) or _clean(merged.get("agent")) or _clean(merged.get("name"))
-    prompt = _clean(merged.get("prompt")) or _clean(merged.get("instructions")) or _clean(merged.get("message"))
-    return NextAction(type="handover", to_agent=to_agent, prompt=prompt) if to_agent else NextAction(type="none")
+    to_agent = (
+        _clean(merged.get("agent_name"))
+        or _clean(merged.get("to_agent"))
+        or _clean(merged.get("agent"))
+        or _clean(merged.get("name"))
+    )
+    prompt = (
+        _clean(merged.get("prompt"))
+        or _clean(merged.get("instructions"))
+        or _clean(merged.get("message"))
+    )
+    if not to_agent:
+        return NextAction(type="none")
+    return NextAction(type="handover", to_agent=to_agent, prompt=prompt)

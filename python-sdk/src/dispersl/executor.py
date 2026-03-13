@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import json
 import uuid
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Any, Awaitable, Callable
+from typing import Any
 
 from .client import AsyncDisperslClient
 from .errors import ToolExecutionError
@@ -25,7 +26,11 @@ ToolExecutorFn = Callable[[dict[str, Any]], Awaitable[ToolResult]]
 
 
 class AgenticExecutor:
-    def __init__(self, client: AsyncDisperslClient, tool_executor: ToolExecutorFn | None = None) -> None:
+    def __init__(
+        self,
+        client: AsyncDisperslClient,
+        tool_executor: ToolExecutorFn | None = None,
+    ) -> None:
         self.client = client
         self.tool_executor = tool_executor
         self.mcp_loader = MCPConfigLoader()
@@ -77,11 +82,11 @@ class AgenticExecutor:
             next_action = NextAction(type="none")
             turn_tool_results: list[ToolResult] = []
 
-            async def _lines() -> Any:
-                async for raw in stream_response.aiter_text():
+            async def _lines(response: Any) -> Any:
+                async for raw in response.aiter_text():
                     yield raw
 
-            async for chunk in parse_ndjson_stream(_lines()):
+            async for chunk in parse_ndjson_stream(_lines(stream_response)):
                 events.append(chunk)
                 if not chunk.tools:
                     continue
@@ -95,7 +100,9 @@ class AgenticExecutor:
                     turn_tool_results.append(result)
                     tool_results.append(result)
                     if result.status != "success":
-                        raise ToolExecutionError(f"Tool failed: {result.tool_name} => {result.error}")
+                        raise ToolExecutionError(
+                            f"Tool failed: {result.tool_name} => {result.error}"
+                        )
                     if tool.function.name == "handover_task":
                         try:
                             payload = json.loads(result.output)
@@ -118,17 +125,27 @@ class AgenticExecutor:
                 break
 
             if turn_tool_results:
-                lines = [f"{idx + 1}. {r.tool_name} => {r.status.upper()} => {r.output}" for idx, r in enumerate(turn_tool_results)]
+                lines = [
+                    f"{idx + 1}. {r.tool_name} => {r.status.upper()} => {r.output}"
+                    for idx, r in enumerate(turn_tool_results)
+                ]
                 current_prompt = "\n".join(
                     [
                         f"You are {current_agent or 'agent'} continuing the same task.",
                         f"Previous assignment: {current_prompt}",
                         "Tool results:",
                         *lines,
-                        "Decide next action. Call handover_task if needed, otherwise end_session when complete."
+                        (
+                            "Decide next action. Call handover_task if needed, "
+                            "otherwise end_session when complete."
+                        ),
                     ]
                 )
             else:
                 break
 
-        return {"task_id": run_task_id, "events": [e.model_dump() for e in events], "tool_results": [r.__dict__ for r in tool_results]}
+        return {
+            "task_id": run_task_id,
+            "events": [e.model_dump() for e in events],
+            "tool_results": [r.__dict__ for r in tool_results],
+        }

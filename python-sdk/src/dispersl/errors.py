@@ -28,7 +28,7 @@ class ServerError(DisperslError):
     pass
 
 
-class TimeoutError(DisperslError):
+class RequestTimeoutError(DisperslError):
     pass
 
 

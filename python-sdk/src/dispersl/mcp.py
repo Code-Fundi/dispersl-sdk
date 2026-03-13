@@ -19,7 +19,9 @@ class MCPTool:
 class MCPConfig:
     version: str = "1"
     servers: dict[str, dict[str, Any]] = field(default_factory=dict)
-    tool_policies: dict[str, list[str]] = field(default_factory=lambda: {"allow": ["*"], "deny": []})
+    tool_policies: dict[str, list[str]] = field(
+        default_factory=lambda: {"allow": ["*"], "deny": []}
+    )
     defaults: dict[str, Any] = field(default_factory=lambda: {"max_tool_calls_per_turn": 20})
 
 
