@@ -1,12 +1,21 @@
 {
   "name": "@codefundi/dispersl-sdk",
-  "version": "0.1.4",
+  "version": "0.1.7",
   "description": "Production TypeScript SDK for Dispersl API",
   "type": "module",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": ["dist"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Code-Fundi/dispersl-sdk",
+    "directory": "typescript-sdk"
+  },
+  "homepage": "https://github.com/Code-Fundi/dispersl-sdk",
+  "keywords": ["dispersl", "sdk", "typescript"],
+  "author": "Code Fundi",
+  "license": "MIT",
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts --clean",
     "lint": "eslint src tests examples --ext .ts",
