@@ -1,6 +1,6 @@
 {
   "name": "@codefundi/dispersl-sdk",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Production TypeScript SDK for Dispersl API",
   "type": "module",
   "main": "dist/index.cjs",
