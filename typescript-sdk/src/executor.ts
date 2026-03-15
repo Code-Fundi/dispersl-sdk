@@ -16,6 +16,10 @@ export interface ToolResult {
 export type ToolExecutorFn = (tool: ToolCall) => Promise<ToolResult>;
 
 export class AgenticExecutor {
+  private normalizeAgentChoices(agentChoices: "auto" | string[]): string[] {
+    return agentChoices === "auto" ? ["auto"] : agentChoices;
+  }
+
   private readonly parser = new NdjsonParser();
   private readonly mcpLoader = new McpConfigLoader();
   readonly mcpTools = new McpRegistry();
@@ -92,7 +96,7 @@ export class AgenticExecutor {
 
   async runPlanAndAgentLoop(args: {
     prompt: string;
-    agentChoices: string[];
+    agentChoices: "auto" | string[];
     model?: string;
     taskId?: string;
     mcpOverride?: Partial<McpConfig>;
@@ -102,7 +106,7 @@ export class AgenticExecutor {
     const maxLoops = args.maxLoops ?? 50;
     const events: NDJSONChunk[] = [];
     const toolResults: ToolResult[] = [];
-    const agentChoices = args.agentChoices;
+    const agentChoices = this.normalizeAgentChoices(args.agentChoices);
 
     const localMcp = this.mcpLoader.loadFromDefaultPath();
     const mergedMcp = this.mcpLoader.merge(localMcp, args.mcpOverride);

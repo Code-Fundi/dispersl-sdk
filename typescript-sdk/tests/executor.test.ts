@@ -78,4 +78,22 @@ describe("executor loop", () => {
     expect(executeAgentCompletion).toHaveBeenCalledTimes(2);
     expect(result.toolResults.map((t) => t.toolName)).toContain("end_session");
   });
+
+  it("normalizes plan agentChoices='auto' to agent_choice ['auto']", async () => {
+    const planStream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        const enc = new TextEncoder();
+        controller.enqueue(enc.encode('{"status":"complete","message":"done"}\n'));
+        controller.close();
+      }
+    });
+
+    const executePlan = vi.fn().mockResolvedValue(planStream);
+    const client = { executePlan } as unknown as DisperslClient;
+    const executor = new AgenticExecutor(client);
+
+    await executor.runPlanAndAgentLoop({ prompt: "plan", agentChoices: "auto" });
+    const firstCallArg = executePlan.mock.calls[0][0] as { agent_choice: string[] };
+    expect(firstCallArg.agent_choice).toEqual(["auto"]);
+  });
 });

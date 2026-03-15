@@ -104,7 +104,7 @@ export interface AgentRequestBase {
 }
 
 export interface AgentPlanRequest extends AgentRequestBase {
-  agent_choice: string[];
+  agent_choice: "auto" | string[];
 }
 
 export type AgentEndpoint =

@@ -54,7 +54,7 @@ async def main() -> None:
     executor = AgenticExecutor(client)
     out = await executor.run_plan_and_agent_loop(
         prompt="Plan and implement a production webhook pipeline",
-        agent_choices=["auto"],
+        agent_choices="auto",  # or ["architect", "security-auditor", "release-manager"]
     )
 
     print(out["task_id"], len(out["events"]), len(out["tool_results"]))
@@ -82,6 +82,15 @@ asyncio.run(main())
 | `agent_completion` | `dict[str, Any]` | `POST /agent/completion` |
 | `agent_plan` | `dict[str, Any]` | `POST /agent/plan` |
 
+### Agent plan choices
+
+`agent_plan` accepts:
+
+- `"auto"` for automatic custom-agent selection
+- `list[str]` for explicit custom agent `name_id` values
+
+When `"auto"` is passed, the SDK normalizes the request payload to `["auto"]` for API compatibility.
+
 ### Resource endpoints
 
 | Domain | Method | Endpoint |
@@ -91,6 +100,22 @@ asyncio.run(main())
 | Agents | `agents_edit(agent_id, body)` | `POST /agents/edit/{id}` |
 | Agents | `agent_by_id(agent_id)` | `GET /agents/{agent_id}` |
 | Agents | `agent_delete(agent_id)` | `DELETE /agents/{agent_id}` |
+
+### Agent lifecycle fields and stats
+
+`agents()` returns paginated data with:
+
+- pagination: `limit`, `hasNext`, `hasPrev`, `nextToken`, `prevToken`
+- per-agent lifecycle + stats fields such as `stars_count`, `clone_count`, and `created_at`
+
+`agent_by_id()` returns richer lifecycle fields:
+
+- `public`, `active`, `updated_at`
+
+Create/edit request payload support:
+
+- create: `name`, `prompt`, optional `description`, `model`, `category`, `public`
+- edit: optional `name`, `prompt`, `description`, `model`, `category`, `public`, `active`
 
 ## Execution Loop Behavior
 
@@ -161,6 +186,16 @@ python -m mypy src
 python -m pytest -q
 python -m build
 ```
+
+## Example Quickstarts
+
+End-to-end quickstarts live in root `examples/py`:
+
+- `examples/py/plan_handover_loop.py`
+- `examples/py/single_agent_completion.py`
+- `examples/py/task_insight_progress.py`
+- `examples/py/agent_lifecycle_and_stats.py`
+- `examples/py/mcp_custom_agent_flow.py`
 
 ## Release
 

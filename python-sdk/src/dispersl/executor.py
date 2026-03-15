@@ -36,6 +36,10 @@ class AgenticExecutor:
         self.mcp_loader = MCPConfigLoader()
         self.mcp_tools = MCPRegistry()
 
+    @staticmethod
+    def _normalize_agent_choices(agent_choices: str | list[str]) -> list[str]:
+        return ["auto"] if agent_choices == "auto" else agent_choices
+
     async def run_agent_completion_loop(
         self,
         name_id: str,
@@ -122,7 +126,7 @@ class AgenticExecutor:
     async def run_plan_and_agent_loop(
         self,
         prompt: str,
-        agent_choices: list[str],
+        agent_choices: str | list[str],
         model: str | None = None,
         task_id: str | None = None,
         mcp_override: dict[str, Any] | None = None,
@@ -145,7 +149,7 @@ class AgenticExecutor:
                 stream_response = await self.client.agent_plan(
                     {
                         "prompt": current_prompt,
-                        "agent_choice": agent_choices,
+                        "agent_choice": self._normalize_agent_choices(agent_choices),
                         "model": model,
                         "task_id": run_task_id,
                         "mcp": {"version": mcp.version, "servers": mcp.servers, "tools": tools},

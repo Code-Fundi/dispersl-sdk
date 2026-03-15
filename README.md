@@ -62,6 +62,11 @@ The SDKs currently target the updated API with these endpoint groups:
   - `GET /agents/{id}`
   - `DELETE /agents/{id}`
 
+Plan endpoint agent choices are fully supported as:
+
+- `"auto"` for automatic custom-agent selection
+- array/list of explicit custom-agent `name_id` values
+
 ## Customizable Agent Choices
 
 Agent selection is runtime-configurable. The plan/executor flow does **not**
@@ -121,6 +126,21 @@ out = await executor.run_agent_completion_loop(
 )
 ```
 
+## Quickstart Examples
+
+Multiple real-world quickstarts are available in root `examples/`:
+
+- TypeScript: `examples/ts`
+- Python: `examples/py`
+
+Coverage includes:
+
+- plan -> handover -> completion multi-agent flow
+- direct single-agent completion loop
+- task insight/progress continuation using `task_id`
+- lifecycle CRUD and agent stats inspection
+- MCP custom-tool orchestration with plan + completion flows
+
 ## Repo Layout
 
 ```text
@@ -133,7 +153,13 @@ dispersl-sdk/
 │   └── release-python.yml
 ├── scripts/
 │   ├── verify.sh
-│   └── release_check.sh
+│   ├── release_check.sh
+├── examples/
+│   ├── README.md
+│   ├── ts/
+│   └── py/
+├── package.json
+├── pnpm-workspace.yaml
 ├── typescript-sdk/
 │   ├── package.json
 │   ├── README.md
@@ -171,6 +197,41 @@ python -m mypy src
 python -m pytest -q
 python -m build
 ```
+
+## Monorepo Release Scripts (pnpm)
+
+Root release scripts read versions directly from:
+
+- `typescript-sdk/package.json`
+- `python-sdk/pyproject.toml`
+
+They enforce semver format, check local/remote tag collisions, and create immutable annotated tags:
+
+- `ts-v<typescript-sdk.version>`
+- `py-v<python-sdk.version>`
+
+Commands:
+
+```bash
+# Print resolved versions + tags
+pnpm release:versions
+
+# Create local tags only
+pnpm release:tag:ts
+pnpm release:tag:py
+pnpm release:tag:all
+
+# Create and push tags to origin (triggers release workflows)
+pnpm release:deploy:ts
+pnpm release:deploy:py
+pnpm release:deploy:all
+```
+
+This is the standard semver release pattern used in high-scale teams:
+
+- package manifests are the source of truth for versioning
+- tags are immutable release artifacts
+- CI/CD is tag-driven for deterministic deploys
 
 ## Package Names
 
