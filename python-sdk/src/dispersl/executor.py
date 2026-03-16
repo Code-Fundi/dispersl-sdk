@@ -38,7 +38,11 @@ class AgenticExecutor:
 
     @staticmethod
     def _normalize_agent_choices(agent_choices: str | list[str]) -> list[str]:
-        return ["auto"] if agent_choices == "auto" else agent_choices
+        if agent_choices == "auto":
+            return ["auto"]
+        if isinstance(agent_choices, str):
+            return [agent_choices]
+        return agent_choices
 
     @staticmethod
     def _clean_text(value: Any) -> str | None:

@@ -250,6 +250,7 @@ async def test_plan_loop_text_only_turn_is_fed_back_and_plan_reinvoked() -> None
     assert "Need specialist agent." in client.last_plan_prompt
     assert any(t["tool_name"] == "end_session" for t in out["tool_results"])
 
+
 @pytest.mark.asyncio
 async def test_plan_accepts_auto_agent_choice() -> None:
     class _CapturePlanClient:
