@@ -16,6 +16,43 @@ export interface ToolResult {
 export type ToolExecutorFn = (tool: ToolCall) => Promise<ToolResult>;
 
 export class AgenticExecutor {
+  private normalizeAgentChoices(agentChoices: "auto" | string[]): string[] {
+    return agentChoices === "auto" ? ["auto"] : agentChoices;
+  }
+
+  private cleanText(value: unknown): string | undefined {
+    if (typeof value !== "string") return undefined;
+    const t = value.trim();
+    return t.length ? t : undefined;
+  }
+
+  private mergeTurnText(parts: string[]): string | undefined {
+    const merged = parts.map((p) => p.trim()).filter(Boolean).join("\n");
+    return merged.length ? merged : undefined;
+  }
+
+  private buildPlanTextContinuationPrompt(previousPrompt: string, turnText: string): string {
+    return [
+      "You previously responded with streamed text (no tool calls).",
+      `Previous assignment: ${previousPrompt}`,
+      "Your latest output:",
+      turnText,
+      "Continue planning and proceed with the workflow.",
+      "If you need to hand over, call handover_task. If done, call end_session."
+    ].join("\n");
+  }
+
+  private buildCompletionTextContinuationPrompt(agentId: string, previousPrompt: string, turnText: string): string {
+    return [
+      `You are ${agentId} continuing the same task.`,
+      `Previous assignment: ${previousPrompt}`,
+      "Your latest output:",
+      turnText,
+      "Continue with the next steps.",
+      "If you need tools, call them. If done, call end_session."
+    ].join("\n");
+  }
+
   private readonly parser = new NdjsonParser();
   private readonly mcpLoader = new McpConfigLoader();
   readonly mcpTools = new McpRegistry();
@@ -59,10 +96,15 @@ export class AgenticExecutor {
 
       let nextAction: NextAction = { type: "none" };
       const turnToolResults: ToolResult[] = [];
+      let sawTools = false;
+      const turnTextParts: string[] = [];
 
       await this.parser.parse(stream, async (chunk) => {
         events.push(chunk);
+        const text = this.cleanText(chunk.content) ?? this.cleanText(chunk.message);
+        if (text) turnTextParts.push(text);
         if (!chunk.tools?.length) return;
+        sawTools = true;
         for (const tool of chunk.tools) {
           nextAction = mergeNextAction(nextAction, nextActionFromTool(tool));
           if (!this.toolExecutor) continue;
@@ -82,7 +124,13 @@ export class AgenticExecutor {
 
       if (turnToolResults.length > 0) {
         currentPrompt = this.buildSingleAgentToolFeedbackPrompt(args.nameId, currentPrompt, turnToolResults);
-      } else {
+      } else if (!sawTools) {
+        const mergedText = this.mergeTurnText(turnTextParts);
+        if (mergedText) {
+          currentPrompt = this.buildCompletionTextContinuationPrompt(args.nameId, currentPrompt, mergedText);
+        }
+        continue;
+      } else if (!this.toolExecutor) {
         keepRunning = false;
       }
     }
@@ -92,7 +140,7 @@ export class AgenticExecutor {
 
   async runPlanAndAgentLoop(args: {
     prompt: string;
-    agentChoices: string[];
+    agentChoices: "auto" | string[];
     model?: string;
     taskId?: string;
     mcpOverride?: Partial<McpConfig>;
@@ -102,7 +150,7 @@ export class AgenticExecutor {
     const maxLoops = args.maxLoops ?? 50;
     const events: NDJSONChunk[] = [];
     const toolResults: ToolResult[] = [];
-    const agentChoices = args.agentChoices;
+    const agentChoices = this.normalizeAgentChoices(args.agentChoices);
 
     const localMcp = this.mcpLoader.loadFromDefaultPath();
     const mergedMcp = this.mcpLoader.merge(localMcp, args.mcpOverride);
@@ -138,10 +186,15 @@ export class AgenticExecutor {
 
       let nextAction: NextAction = { type: "none" };
       const turnToolResults: ToolResult[] = [];
+      let sawTools = false;
+      const turnTextParts: string[] = [];
 
       await this.parser.parse(stream, async (chunk) => {
         events.push(chunk);
+        const text = this.cleanText(chunk.content) ?? this.cleanText(chunk.message);
+        if (text) turnTextParts.push(text);
         if (!chunk.tools?.length) return;
+        sawTools = true;
         for (const tool of chunk.tools) {
           nextAction = mergeNextAction(nextAction, nextActionFromTool(tool));
           if (!this.toolExecutor) continue;
@@ -178,13 +231,28 @@ export class AgenticExecutor {
       }
 
       if (step === "plan") {
+        if (!sawTools) {
+          // Plan responded with text-only content and no tools; per spec,
+          // call /agent/plan again with the same parameters to continue.
+          const mergedText = this.mergeTurnText(turnTextParts);
+          if (mergedText) {
+            currentPrompt = this.buildPlanTextContinuationPrompt(currentPrompt, mergedText);
+          }
+          continue;
+        }
         keepRunning = false;
         continue;
       }
 
       if (turnToolResults.length > 0) {
         currentPrompt = this.buildToolFeedbackPrompt(currentAgent ?? "agent", currentPrompt, turnToolResults);
-      } else {
+      } else if (!sawTools) {
+        const mergedText = this.mergeTurnText(turnTextParts);
+        if (mergedText) {
+          currentPrompt = this.buildCompletionTextContinuationPrompt(currentAgent ?? "agent", currentPrompt, mergedText);
+        }
+        continue;
+      } else if (!this.toolExecutor) {
         keepRunning = false;
       }
     }

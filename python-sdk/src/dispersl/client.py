@@ -25,7 +25,10 @@ class AsyncDisperslClient:
         return await self.http.request("POST", "/agent/completion", json_body=body)
 
     async def agent_plan(self, body: dict[str, Any]) -> Any:
-        return await self.http.request("POST", "/agent/plan", json_body=body)
+        normalized_body = dict(body)
+        if normalized_body.get("agent_choice") == "auto":
+            normalized_body["agent_choice"] = ["auto"]
+        return await self.http.request("POST", "/agent/plan", json_body=normalized_body)
 
     # Agent lifecycle endpoints
     async def agents(self, limit: int = 20, next_token: str | None = None) -> Any:

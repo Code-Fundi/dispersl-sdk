@@ -50,7 +50,7 @@ const client = new DisperslClient({
 const executor = new AgenticExecutor(client);
 const result = await executor.runPlanAndAgentLoop({
   prompt: "Plan and implement a production webhook pipeline",
-  agentChoices: ["auto"]
+  agentChoices: "auto" // or ["architect", "security-auditor", "release-manager"]
 });
 
 console.log(result.taskId, result.events.length, result.toolResults.length);
@@ -74,6 +74,15 @@ console.log(result.taskId, result.events.length, result.toolResults.length);
 | `executeAgentCompletion` | `AgentCompletionRequest` | `POST /agent/completion` | `ReadableStream<Uint8Array>` |
 | `executePlan` | `AgentPlanRequest` | `POST /agent/plan` | `ReadableStream<Uint8Array>` |
 
+### Agent plan choices
+
+`AgentPlanRequest.agent_choice` supports:
+
+- `"auto"` (use automatic agent selection)
+- `string[]` of explicit custom agent `name_id` values
+
+When `"auto"` is used, the SDK normalizes the wire payload to `["auto"]` for API compatibility.
+
 ### Resource endpoints
 
 | Domain | Method | Endpoint |
@@ -83,6 +92,22 @@ console.log(result.taskId, result.events.length, result.toolResults.length);
 | Agents | `editAgent` | `POST /agents/edit/{id}` |
 | Agents | `getAgent` | `GET /agents/{id}` |
 | Agents | `deleteAgent` | `DELETE /agents/{id}` |
+
+### Agent lifecycle fields and stats
+
+`getAgents` returns a paginated envelope with:
+
+- pagination: `limit`, `hasNext`, `hasPrev`, `nextToken`, `prevToken`
+- per-agent lifecycle + stats fields: `id`, `name_id`, `name`, `description`, `prompt`, `model`, `category`, `stars_count`, `clone_count`, `created_at`
+
+`getAgent` returns per-agent detail fields including lifecycle state:
+
+- `public`, `active`, `updated_at`
+
+Create/edit request support:
+
+- create: `name`, `prompt`, optional `description`, `model`, `category`, `public`
+- edit: optional `name`, `prompt`, `description`, `model`, `category`, `public`, `active`
 
 ## Execution Loop Behavior
 
@@ -164,6 +189,16 @@ pnpm run typecheck
 pnpm run test -- --run
 pnpm run build
 ```
+
+## Example Quickstarts
+
+End-to-end quickstarts live in root `examples/ts`:
+
+- `examples/ts/plan-handover-loop.ts`
+- `examples/ts/single-agent-completion.ts`
+- `examples/ts/task-insight-progress.ts`
+- `examples/ts/agent-lifecycle-and-stats.ts`
+- `examples/ts/mcp-custom-agent-flow.ts`
 
 ## Release
 

@@ -56,4 +56,4 @@ class AgentRequestBase(BaseModel):
 
 
 class PlanRequest(AgentRequestBase):
-    agent_choice: list[str] = Field(default_factory=list)
+    agent_choice: Literal["auto"] | list[str] = Field(default_factory=list)

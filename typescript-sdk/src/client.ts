@@ -33,9 +33,13 @@ export class DisperslClient {
   }
 
   executePlan(request: AgentPlanRequest): Promise<ReadableStream<Uint8Array>> {
+    const normalizedRequest = {
+      ...request,
+      agent_choice: request.agent_choice === "auto" ? ["auto"] : request.agent_choice
+    };
     return this.http.request<ReadableStream<Uint8Array>>("/agent/plan", {
       method: "POST",
-      body: JSON.stringify(request)
+      body: JSON.stringify(normalizedRequest)
     });
   }
 
