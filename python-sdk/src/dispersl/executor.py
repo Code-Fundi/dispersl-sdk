@@ -40,6 +40,46 @@ class AgenticExecutor:
     def _normalize_agent_choices(agent_choices: str | list[str]) -> list[str]:
         return ["auto"] if agent_choices == "auto" else agent_choices
 
+    @staticmethod
+    def _clean_text(value: Any) -> str | None:
+        if not isinstance(value, str):
+            return None
+        t = value.strip()
+        return t if t else None
+
+    @staticmethod
+    def _merge_turn_text(parts: list[str]) -> str | None:
+        merged = "\n".join([p.strip() for p in parts if isinstance(p, str) and p.strip()])
+        return merged if merged else None
+
+    @staticmethod
+    def _build_plan_text_continuation_prompt(previous_prompt: str, turn_text: str) -> str:
+        return "\n".join(
+            [
+                "You previously responded with streamed text (no tool calls).",
+                f"Previous assignment: {previous_prompt}",
+                "Your latest output:",
+                turn_text,
+                "Continue planning and proceed with the workflow.",
+                "If you need to hand over, call handover_task. If done, call end_session.",
+            ]
+        )
+
+    @staticmethod
+    def _build_completion_text_continuation_prompt(
+        agent_id: str, previous_prompt: str, turn_text: str
+    ) -> str:
+        return "\n".join(
+            [
+                f"You are {agent_id} continuing the same task.",
+                f"Previous assignment: {previous_prompt}",
+                "Your latest output:",
+                turn_text,
+                "Continue with the next steps.",
+                "If you need tools, call them. If done, call end_session.",
+            ]
+        )
+
     async def run_agent_completion_loop(
         self,
         name_id: str,
@@ -71,6 +111,8 @@ class AgenticExecutor:
             )
             next_action = NextAction(type="none")
             turn_tool_results: list[ToolResult] = []
+            saw_tools = False
+            turn_text_parts: list[str] = []
 
             async def _lines(response: Any) -> Any:
                 async for raw in response.aiter_text():
@@ -78,8 +120,12 @@ class AgenticExecutor:
 
             async for chunk in parse_ndjson_stream(_lines(stream_response)):
                 events.append(chunk)
+                text = self._clean_text(chunk.content) or self._clean_text(chunk.message)
+                if text:
+                    turn_text_parts.append(text)
                 if not chunk.tools:
                     continue
+                saw_tools = True
                 for tool in chunk.tools:
                     action = next_action_from_tool(tool.model_dump())
                     if action.type != "none":
@@ -114,7 +160,17 @@ class AgenticExecutor:
                         ),
                     ]
                 )
-            else:
+                continue
+
+            if not saw_tools:
+                merged_text = self._merge_turn_text(turn_text_parts)
+                if merged_text:
+                    current_prompt = self._build_completion_text_continuation_prompt(
+                        name_id, current_prompt, merged_text
+                    )
+                continue
+
+            if self.tool_executor is None:
                 break
 
         return {
@@ -168,6 +224,8 @@ class AgenticExecutor:
 
             next_action = NextAction(type="none")
             turn_tool_results: list[ToolResult] = []
+            saw_tools = False
+            turn_text_parts: list[str] = []
 
             async def _lines(response: Any) -> Any:
                 async for raw in response.aiter_text():
@@ -175,8 +233,12 @@ class AgenticExecutor:
 
             async for chunk in parse_ndjson_stream(_lines(stream_response)):
                 events.append(chunk)
+                text = self._clean_text(chunk.content) or self._clean_text(chunk.message)
+                if text:
+                    turn_text_parts.append(text)
                 if not chunk.tools:
                     continue
+                saw_tools = True
                 for tool in chunk.tools:
                     action = next_action_from_tool(tool.model_dump())
                     if action.type != "none":
@@ -209,6 +271,15 @@ class AgenticExecutor:
                 break
 
             if step == "plan":
+                if not saw_tools:
+                    # /agent/plan responded with text-only content and no tools; per spec,
+                    # call /agent/plan again with the same parameters to continue.
+                    merged_text = self._merge_turn_text(turn_text_parts)
+                    if merged_text:
+                        current_prompt = self._build_plan_text_continuation_prompt(
+                            current_prompt, merged_text
+                        )
+                    continue
                 break
 
             if turn_tool_results:
@@ -228,7 +299,17 @@ class AgenticExecutor:
                         ),
                     ]
                 )
-            else:
+                continue
+
+            if not saw_tools:
+                merged_text = self._merge_turn_text(turn_text_parts)
+                if merged_text:
+                    current_prompt = self._build_completion_text_continuation_prompt(
+                        current_agent or "agent", current_prompt, merged_text
+                    )
+                continue
+
+            if self.tool_executor is None:
                 break
 
         return {

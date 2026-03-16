@@ -79,6 +79,90 @@ describe("executor loop", () => {
     expect(result.toolResults.map((t) => t.toolName)).toContain("end_session");
   });
 
+  it("continues completion loop on text-only turn by feeding back merged content", async () => {
+    const textOnlyTurn = new ReadableStream<Uint8Array>({
+      start(controller) {
+        const enc = new TextEncoder();
+        controller.enqueue(enc.encode('{"status":"processing","message":"m","content":"Step 1: do X."}\n'));
+        controller.enqueue(enc.encode('{"status":"complete","message":"done","content":"Step 2: do Y."}\n'));
+        controller.close();
+      }
+    });
+
+    const endTurn = new ReadableStream<Uint8Array>({
+      start(controller) {
+        const enc = new TextEncoder();
+        controller.enqueue(enc.encode('{"status":"processing","message":"Tool calls","tools":[{"function":{"name":"end_session","arguments":"{}"}}]}\n'));
+        controller.enqueue(enc.encode('{"status":"complete","message":"done"}\n'));
+        controller.close();
+      }
+    });
+
+    const executeAgentCompletion = vi.fn()
+      .mockResolvedValueOnce(textOnlyTurn)
+      .mockResolvedValueOnce(endTurn);
+    const client = { executeAgentCompletion } as unknown as DisperslClient;
+    const executor = new AgenticExecutor(client, async (tool) => ({
+      toolName: tool.function.name,
+      status: "success",
+      output: tool.function.arguments
+    }));
+
+    await executor.runAgentCompletionLoop({ nameId: "architect", prompt: "Audit architecture" });
+
+    expect(executeAgentCompletion).toHaveBeenCalledTimes(2);
+    const secondCallBody = executeAgentCompletion.mock.calls[1][0] as { prompt: string };
+    expect(secondCallBody.prompt).toContain("Step 1: do X.");
+    expect(secondCallBody.prompt).toContain("Step 2: do Y.");
+  });
+
+  it("continues plan loop on text-only turn and re-invokes /agent/plan", async () => {
+    const textOnlyPlanTurn = new ReadableStream<Uint8Array>({
+      start(controller) {
+        const enc = new TextEncoder();
+        controller.enqueue(enc.encode('{"status":"processing","message":"m","content":"Draft plan: A then B."}\n'));
+        controller.enqueue(enc.encode('{"status":"complete","message":"done","content":"Need specialist agent."}\n'));
+        controller.close();
+      }
+    });
+
+    const handoverPlanTurn = new ReadableStream<Uint8Array>({
+      start(controller) {
+        const enc = new TextEncoder();
+        controller.enqueue(enc.encode('{"status":"processing","message":"Tool calls","tools":[{"function":{"name":"handover_task","arguments":"{\\"agent_name\\":\\"code\\",\\"prompt\\":\\"go\\"}"}}]}\n'));
+        controller.enqueue(enc.encode('{"status":"complete","message":"done"}\n'));
+        controller.close();
+      }
+    });
+
+    const endAgentTurn = new ReadableStream<Uint8Array>({
+      start(controller) {
+        const enc = new TextEncoder();
+        controller.enqueue(enc.encode('{"status":"processing","message":"Tool calls","tools":[{"function":{"name":"end_session","arguments":"{}"}}]}\n'));
+        controller.enqueue(enc.encode('{"status":"complete","message":"done"}\n'));
+        controller.close();
+      }
+    });
+
+    const executePlan = vi.fn()
+      .mockResolvedValueOnce(textOnlyPlanTurn)
+      .mockResolvedValueOnce(handoverPlanTurn);
+    const executeAgentCompletion = vi.fn().mockResolvedValue(endAgentTurn);
+    const client = { executePlan, executeAgentCompletion } as unknown as DisperslClient;
+    const executor = new AgenticExecutor(client, async (tool) => ({
+      toolName: tool.function.name,
+      status: "success",
+      output: tool.function.arguments
+    }));
+
+    await executor.runPlanAndAgentLoop({ prompt: "build sdk", agentChoices: ["code"] });
+
+    expect(executePlan).toHaveBeenCalledTimes(2);
+    const secondCallBody = executePlan.mock.calls[1][0] as { prompt: string };
+    expect(secondCallBody.prompt).toContain("Draft plan: A then B.");
+    expect(secondCallBody.prompt).toContain("Need specialist agent.");
+  });
+
   it("normalizes plan agentChoices='auto' to agent_choice ['auto']", async () => {
     const planStream = new ReadableStream<Uint8Array>({
       start(controller) {
