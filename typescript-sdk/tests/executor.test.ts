@@ -111,7 +111,9 @@ describe("executor loop", () => {
     await executor.runAgentCompletionLoop({ nameId: "architect", prompt: "Audit architecture" });
 
     expect(executeAgentCompletion).toHaveBeenCalledTimes(2);
-    const secondCallBody = executeAgentCompletion.mock.calls[1][0] as { prompt: string };
+    const secondCallArgs = executeAgentCompletion.mock.calls[1];
+    expect(secondCallArgs).toBeDefined();
+    const secondCallBody = secondCallArgs![0] as { prompt: string };
     expect(secondCallBody.prompt).toContain("Step 1: do X.");
     expect(secondCallBody.prompt).toContain("Step 2: do Y.");
   });
@@ -158,7 +160,9 @@ describe("executor loop", () => {
     await executor.runPlanAndAgentLoop({ prompt: "build sdk", agentChoices: ["code"] });
 
     expect(executePlan).toHaveBeenCalledTimes(2);
-    const secondCallBody = executePlan.mock.calls[1][0] as { prompt: string };
+    const secondPlanCallArgs = executePlan.mock.calls[1];
+    expect(secondPlanCallArgs).toBeDefined();
+    const secondCallBody = secondPlanCallArgs![0] as { prompt: string };
     expect(secondCallBody.prompt).toContain("Draft plan: A then B.");
     expect(secondCallBody.prompt).toContain("Need specialist agent.");
   });
@@ -177,7 +181,9 @@ describe("executor loop", () => {
     const executor = new AgenticExecutor(client);
 
     await executor.runPlanAndAgentLoop({ prompt: "plan", agentChoices: "auto" });
-    const firstCallArg = executePlan.mock.calls[0][0] as { agent_choice: string[] };
+    const firstPlanCallArgs = executePlan.mock.calls[0];
+    expect(firstPlanCallArgs).toBeDefined();
+    const firstCallArg = firstPlanCallArgs![0] as { agent_choice: string[] };
     expect(firstCallArg.agent_choice).toEqual(["auto"]);
   });
 });
